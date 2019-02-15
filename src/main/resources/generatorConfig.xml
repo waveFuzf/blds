@@ -31,6 +31,6 @@
             <property name="enableSubPackages" value="true"/>
         </javaClientGenerator>
 
-        <table tableName="%" />
+        <table tableName="hz_doctor" />
     </context>
 </generatorConfiguration>

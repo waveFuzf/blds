@@ -1,13 +1,15 @@
 package com.example.blds.controller;
 
 
+import com.alibaba.fastjson.JSON;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.entity.HzLoginInfo;
+import com.example.blds.entity.HzUser;
 import com.example.blds.service.HzLoginInfoService;
+import com.example.blds.service.HzUserService;
 import com.example.blds.util.TokenUtil;
 import io.swagger.annotations.ApiParam;
-import net.sf.json.JSONObject;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -29,7 +31,10 @@ public class LoginController {
     private TokenUtil tokenUtil;
     @Autowired
     private HzLoginInfoService hzLoginInfoService;
+    @Autowired
+    private HzUserService hzUserService;
 
+    //我自己测试用用的。
     @PostMapping("/sign")
     public Result Sign(@ApiParam(value = "用户名", required = true) @RequestParam(value = "loginName") String username,
                        @ApiParam(value = "密码", required = true) @RequestParam(value = "password") String password){
@@ -56,9 +61,9 @@ public class LoginController {
             return ResultGenerator.genFailResult("登录失败，用户名或密码错误！");
         }
         HzLoginInfo user=hzLoginInfoService.getByUsername(username);
-//        hzLoginInfoService.changeStatusByname("1",username);
-
-        JSONObject userSession = JSONObject.fromObject(user);
+        HzUser hzUser=hzUserService.getUserInfoByUid(user.getUid());
+        hzUserService.changeStatusByUid("1",hzUser.getId());
+        String userSession = JSON.toJSONString(hzUser);
         String redistoken=tokenUtil.createToken(userSession);
         return ResultGenerator.genSuccessResult(redistoken);
     }

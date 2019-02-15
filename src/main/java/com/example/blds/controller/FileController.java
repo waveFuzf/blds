@@ -13,11 +13,6 @@ import java.io.*;
 @Controller
 @RequestMapping("/file")
 public class FileController {
-    @RequestMapping(value="/gouploadimg", method = RequestMethod.GET)
-    public String goUploadImg() {
-        //跳转到 templates 目录下的 uploadimg.html
-        return "index";
-    }
 
     @PostMapping("/upload")
     @ResponseBody

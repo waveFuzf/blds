@@ -15,6 +15,7 @@ public class PageHelperConfig {
         p.setProperty("offsetAsPageNum", "true");
         p.setProperty("rowBoundsWithCount", "true");
         p.setProperty("reasonable", "true");
+        p.setProperty("dialect","mysql");
         pageHelper.setProperties(p);
         return pageHelper;
     }

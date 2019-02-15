@@ -1,6 +1,5 @@
 package com.example.blds.util;
 
-import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -12,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 public class TokenUtil {
     @Autowired
     private RedisTemplate redisTemplate;
-    public String createToken (JSONObject userSession){
+    public String createToken (String userSession){
         String tokenId = UUID.randomUUID().toString().replace("-","");
         redisTemplate.boundValueOps(tokenId).set(userSession.toString(),15000,TimeUnit.SECONDS);
         return tokenId;

@@ -208,10 +208,17 @@ public class UserController {
     @PostMapping("/getExpertsInfo")
     @ResponseBody
     public Result getExpertsInfo(@ApiParam("name")@RequestParam(required = false) String name,
-                                 @ApiParam(value = "页面size",example = "1")@RequestParam Integer pageSize,
-                                 @ApiParam(value = "第几页",example = "1")@RequestParam Integer pageNo){
+                                 @ApiParam(value = "页面size",example = "1")@RequestParam(required = false) Integer pageSize,
+                                 @ApiParam(value = "第几页",example = "1")@RequestParam(required = false) Integer pageNo){
         List<HzUser> hzUsers = userService.getExpertsInfo(name,pageSize,pageNo);
         return ResultGenerator.genSuccessResult(hzUsers);
+    }
+
+    @PostMapping("/getExpertsInfoById")
+    @ResponseBody
+    public Result getExpertsInfoById(@ApiParam("医师Id")@RequestParam Integer doctorId){
+        HzUser hzUser = userMapper.getExpertsInfoById(doctorId);
+        return ResultGenerator.genSuccessResult(hzUser);
     }
 
 

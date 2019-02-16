@@ -9,7 +9,5 @@ public interface HzUserService {
 
     void changeStatusByUid(String state, Long uid);
 
-    List<HzUser> getExpertsInfo(String name);
-
     List<HzUser> getExpertsInfo(String name, Integer pageSize, Integer pageNo);
 }

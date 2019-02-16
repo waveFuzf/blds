@@ -4,9 +4,12 @@ import com.alibaba.fastjson.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
+
 @Data
 public class HzUser {
     @Id
@@ -50,5 +53,8 @@ public class HzUser {
     private Date deleteTime;
 
     private String description;
+
+    @Transient
+    private List<HzEvaluate> evaluates;
 
 }

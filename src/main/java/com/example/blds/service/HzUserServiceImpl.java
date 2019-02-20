@@ -36,4 +36,30 @@ public class HzUserServiceImpl implements HzUserService {
         List<HzUser> user=Objects.equals(name,null)?hzUserMapper.getExpertsInfo():hzUserMapper.getExpertsInfoByTag("%"+name+"%");
         return pageInfo;
     }
+
+    @Override
+    public List<HzUser> getExpertsInfoByName(String name, Integer pageSize, Integer pageNo) {
+        if(Objects.equals(pageSize,null)){
+            pageSize=4;
+        }
+        if(Objects.equals(pageNo,null)){
+            pageNo=1;
+        }
+        Page<HzUser> pageInfo = PageHelper.startPage(pageNo, pageSize);
+        List<HzUser> user=hzUserMapper.getExpertsInfoByName("%"+name+"%");
+        return pageInfo;
+    }
+
+    @Override
+    public List<HzUser> getExpertsInfoByName(String name, Integer pageSize, Integer pageNo, Integer caseTypeId) {
+        if(Objects.equals(pageSize,null)){
+            pageSize=4;
+        }
+        if(Objects.equals(pageNo,null)){
+            pageNo=1;
+        }
+        Page<HzUser> pageInfo = PageHelper.startPage(pageNo, pageSize);
+        List<HzUser> user=Objects.equals(name,null)?hzUserMapper.getExpertsInfoAndPrice(caseTypeId):hzUserMapper.getExpertsInfoAndPriceByTag("%"+name+"%",caseTypeId);
+        return pageInfo;
+    }
 }

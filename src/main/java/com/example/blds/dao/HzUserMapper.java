@@ -33,4 +33,20 @@ public interface HzUserMapper extends tkMapper<HzUser> {
             @Result(column = "user_id",property = "evaluates",many = @Many(select = "com.example.blds.dao.HzEvaluateMapper.getEvalatesByDoctorId"))
     })
     HzUser getExpertsInfoById(Integer doctorId);
+    @Select({
+            "select * from hz_user where name LIKE #{name}"
+    })
+    List<HzUser> getExpertsInfoByName(String name);
+
+    @Select({
+            "select hz_user.*,hz_price_config.price as price from hz_user LEFT join hz_price_config ON hz_user.position=hz_price_config.position_name " +
+                    "where hz_price_config.price_type_id = #{caseTypeId} ORDER BY hz_user.user_score DESC,hz_user.total_consulation DESC"
+    })
+    List<HzUser> getExpertsInfoAndPrice(Integer caseTypeId);
+
+    @Select({
+            "select hz_user.*,hz_price_config.price as price from hz_user LEFT join hz_price_config ON hz_user.position=hz_price_config.position_name " +
+                    "where hz_user.description LIKE #{name} and hz_price_config.price_type_id = #{caseTypeId} ORDER BY hz_user.user_score DESC,hz_user.total_consulation DESC"
+    })
+    List<HzUser> getExpertsInfoAndPriceByTag(@Param("name") String name, @Param("caseTypeId") Integer caseTypeId);
 }

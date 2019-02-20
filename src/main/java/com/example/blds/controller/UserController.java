@@ -6,6 +6,7 @@ import com.example.blds.dao.HzUserMapper;
 import com.example.blds.entity.HzUser;
 import com.example.blds.service.HzUserService;
 import com.example.blds.util.TokenUtil;
+import com.github.pagehelper.Page;
 import io.swagger.annotations.ApiParam;
 import net.sf.json.JSONObject;
 import org.apache.shiro.crypto.hash.SimpleHash;
@@ -209,9 +210,16 @@ public class UserController {
     @ResponseBody
     public Result getExpertsInfo(@ApiParam("name")@RequestParam(required = false) String name,
                                  @ApiParam(value = "页面size",example = "1")@RequestParam(required = false) Integer pageSize,
-                                 @ApiParam(value = "第几页",example = "1")@RequestParam(required = false) Integer pageNo){
-        List<HzUser> hzUsers = userService.getExpertsInfo(name,pageSize,pageNo);
-        return ResultGenerator.genSuccessResult(hzUsers);
+                                 @ApiParam(value = "第几页",example = "1")@RequestParam(required = false) Integer pageNo,
+                                 @ApiParam(value = "类型",example = "1")@RequestParam(required = false) Integer caseTypeId){
+        if (caseTypeId == null){
+            List<HzUser> hzUsers = userService.getExpertsInfo(name,pageSize,pageNo);
+            return ResultGenerator.genSuccessResult(hzUsers,((Page) hzUsers).getTotal());
+        }else  {
+            List<HzUser> hzUsers = userService.getExpertsInfoByName(name,pageSize,pageNo,caseTypeId);
+            return ResultGenerator.genSuccessResult(hzUsers);
+        }
+
     }
 
     @PostMapping("/getExpertsInfoById")
@@ -220,6 +228,16 @@ public class UserController {
         HzUser hzUser = userMapper.getExpertsInfoById(doctorId);
         return ResultGenerator.genSuccessResult(hzUser);
     }
+
+    @PostMapping("/getExpertsInfoByName")
+    @ResponseBody
+    public Result getExpertsInfoByName(@ApiParam("name")@RequestParam(required = false) String name,
+                                 @ApiParam(value = "页面size",example = "1")@RequestParam(required = false) Integer pageSize,
+                                 @ApiParam(value = "第几页",example = "1")@RequestParam(required = false) Integer pageNo){
+        List<HzUser> hzUsers = userService.getExpertsInfoByName(name,pageSize,pageNo);
+        return ResultGenerator.genSuccessResult(hzUsers);
+    }
+
 
 
 //    private List getUsersFromFile(Workbook workbook) {

@@ -57,4 +57,7 @@ public class HzUser {
     @Transient
     private List<HzEvaluate> evaluates;
 
+    @Transient
+    private String price;
+
 }

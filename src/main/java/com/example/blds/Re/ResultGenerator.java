@@ -35,4 +35,11 @@ public class ResultGenerator {
                 .setCode(ResultCodeEnum.UNAUTHORIZED)
                 .setMessage("权限不足！");
     }
+
+    public static <T> Result<T> genSuccessResult(T data,long total) {
+        return new Result()
+                .setCode(ResultCodeEnum.SUCCESS)
+                .setMessage(String.valueOf(total))
+                .setData(data);
+    }
 }

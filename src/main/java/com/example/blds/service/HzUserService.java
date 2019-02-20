@@ -10,4 +10,8 @@ public interface HzUserService {
     void changeStatusByUid(String state, Long uid);
 
     List<HzUser> getExpertsInfo(String name, Integer pageSize, Integer pageNo);
+
+    List<HzUser> getExpertsInfoByName(String name, Integer pageSize, Integer pageNo);
+
+    List<HzUser> getExpertsInfoByName(String name, Integer pageSize, Integer pageNo, Integer caseTypeId);
 }

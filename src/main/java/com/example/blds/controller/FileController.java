@@ -17,32 +17,31 @@ public class FileController {
     @PostMapping("/upload")
     @ResponseBody
     public String upload(@RequestPart("file") MultipartFile file, HttpServletRequest request) throws IOException {
-//       File targetFile =new File("C:\\Users\\YFZX-FZF-1777\\Desktop\\图片上传","mady.txt");
-//       file.transferTo(targetFile);
-//       return null;
-        if (!file.isEmpty()) {
-            String saveFileName = file.getOriginalFilename();
-            File saveFile = new File("C:\\Users\\90663\\Desktop\\新建文件夹\\"+ saveFileName);
-            System.out.println(saveFile.getParentFile());
-            if (!saveFile.getParentFile().exists()) {
-                saveFile.getParentFile().mkdirs();
-            }
-            try {
-                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(saveFile));
-                out.write(file.getBytes());
-                out.flush();
-                out.close();
-                return saveFile.getName() + " 上传成功";
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                return "上传失败," + e.getMessage();
-            } catch (IOException e) {
-                e.printStackTrace();
-                return "上传失败," + e.getMessage();
-            }
-        } else {
-            return "上传失败，因为文件为空.";
-        }
+       File targetFile =new File("C:\\Users\\YFZX-FZF-1777\\Desktop\\slides",file.getOriginalFilename());
+       file.transferTo(targetFile);
+       return null;
+//        if (!file.isEmpty()) {
+//            String saveFileName = file.getOriginalFilename();
+//            File saveFile = new File("C:\\Users\\90663\\Desktop\\slides\\"+ saveFileName);
+//            if (!saveFile.getParentFile().exists()) {
+//                saveFile.getParentFile().mkdirs();
+//            }
+//            try {
+//                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(saveFile));
+//                out.write(file.getBytes());
+//                out.flush();
+//                out.close();
+//                return saveFile.getName() + " 上传成功";
+//            } catch (FileNotFoundException e) {
+//                e.printStackTrace();
+//                return "上传失败," + e.getMessage();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                return "上传失败," + e.getMessage();
+//            }
+//        } else {
+//            return "上传失败，因为文件为空.";
+//        }
     }
 
     @GetMapping(value = "/download")

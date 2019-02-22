@@ -1,6 +1,10 @@
 package com.example.blds.controller;
 
+import com.example.blds.util.TokenUtil;
+import net.sf.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -8,40 +12,25 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.util.UUID;
 
 @CrossOrigin
 @Controller
 @RequestMapping("/file")
 public class FileController {
+    @Autowired
+    private TokenUtil tokenUtil;
+
 
     @PostMapping("/upload")
     @ResponseBody
-    public String upload(@RequestPart("file") MultipartFile file, HttpServletRequest request) throws IOException {
-       File targetFile =new File("C:\\Users\\YFZX-FZF-1777\\Desktop\\slides",file.getOriginalFilename());
-       file.transferTo(targetFile);
-       return null;
-//        if (!file.isEmpty()) {
-//            String saveFileName = file.getOriginalFilename();
-//            File saveFile = new File("C:\\Users\\90663\\Desktop\\slides\\"+ saveFileName);
-//            if (!saveFile.getParentFile().exists()) {
-//                saveFile.getParentFile().mkdirs();
-//            }
-//            try {
-//                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(saveFile));
-//                out.write(file.getBytes());
-//                out.flush();
-//                out.close();
-//                return saveFile.getName() + " 上传成功";
-//            } catch (FileNotFoundException e) {
-//                e.printStackTrace();
-//                return "上传失败," + e.getMessage();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//                return "上传失败," + e.getMessage();
-//            }
-//        } else {
-//            return "上传失败，因为文件为空.";
-//        }
+    public String upload(@RequestPart("file") MultipartFile file, HttpServletRequest request, @RequestParam(required = false)String token ) throws IOException {
+        String str=tokenUtil.checkToken(token);
+        JSONObject jsonObject=JSONObject.fromObject(str);
+        UUID.randomUUID().toString().replace("-","");
+        File targetFile =new File(ResourceUtils.getURL("class"),file.getOriginalFilename());
+        file.transferTo(targetFile);
+        return null;
     }
 
     @GetMapping(value = "/download")

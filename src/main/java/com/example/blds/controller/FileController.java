@@ -1,6 +1,8 @@
 package com.example.blds.controller;
 
+import io.swagger.annotations.ApiParam;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,8 +18,8 @@ public class FileController {
 
     @PostMapping("/upload")
     @ResponseBody
-    public String upload(@RequestPart("file") MultipartFile file, HttpServletRequest request) throws IOException {
-       File targetFile =new File("C:\\Users\\YFZX-FZF-1777\\Desktop\\slides",file.getOriginalFilename());
+    public String upload(@RequestPart("file") MultipartFile file, @RequestParam(required = false) String token) throws IOException {
+       File targetFile =new File(ResourceUtils.getFile("classpath:").getPath()+"\\slides\\",file.getOriginalFilename());
        file.transferTo(targetFile);
        return null;
 //        if (!file.isEmpty()) {

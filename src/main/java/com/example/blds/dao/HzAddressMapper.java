@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface HzAddressMapper extends tkMapper<HzAddress> {
     @Update({
-            "Update hz_address Set is_delete=1 where user_id=#{userId}"
+            "Update hz_address Set type=0 where user_id=#{userId}"
     })
     void deleteByUserId(Long userId);
 

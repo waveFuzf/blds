@@ -24,10 +24,6 @@ import javax.servlet.http.HttpSession;
 import java.util.Date;
 import java.util.List;
 
-/**
- * 病例价格管理controller
- * @author Liujingguang
- */
 @Api(tags = "价格管理  (价格列表、条件查询 添加价格 设置分成)")
 @RequestMapping("/blprice")
 @Controller

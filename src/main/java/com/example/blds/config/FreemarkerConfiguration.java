@@ -30,10 +30,9 @@ public class FreemarkerConfiguration {
      */
     private static void setConfiguation() {
         config = new Configuration();
-        String path = ResourceLoader.getPath("");
-        System.out.println(">>>>>>>>>>>>>>>>>>>"+path);
+//        String path = ResourceLoader.getPath("");
         try {
-            config.setDirectoryForTemplateLoading(new File(path));
+            config.setDirectoryForTemplateLoading(new File("E:\\blds\\src\\main\\resources"));
         } catch (IOException e) {
             e.printStackTrace();
         }

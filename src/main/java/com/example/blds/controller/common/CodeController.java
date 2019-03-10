@@ -24,7 +24,6 @@ import java.util.Random;
 @RequestMapping("/code")
 @Controller
 @ResponseBody
-@ApiIgnore
 public class CodeController {
 
     private int width = 110;//定义图片的width

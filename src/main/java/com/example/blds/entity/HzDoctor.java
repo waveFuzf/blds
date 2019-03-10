@@ -1,8 +1,10 @@
 package com.example.blds.entity;
 
+import javax.persistence.Id;
 import java.util.Date;
 
 public class HzDoctor {
+    @Id
     private Integer id;
 
     private String doctorName;

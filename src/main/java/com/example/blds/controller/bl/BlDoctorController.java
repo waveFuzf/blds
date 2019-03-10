@@ -3,27 +3,31 @@ package com.example.blds.controller.bl;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.aop.UserTokenAop;
-import com.example.blds.entity.HzAddress;
-import com.example.blds.entity.HzSlide;
-import com.example.blds.entity.HzSupplementReport;
+import com.example.blds.dao.*;
+import com.example.blds.entity.*;
 import com.example.blds.service.*;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
+import com.example.blds.util.TokenUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -36,6 +40,8 @@ import java.util.UUID;
 public class BlDoctorController {
 
     @Autowired
+    private TokenUtil tokenUtil;
+    @Autowired
     private HzSlidesService slidesService;
     @Autowired
     private HzAddressService hzAddressService;
@@ -47,69 +53,173 @@ public class BlDoctorController {
     private HzSupplementReportService supplementReportService;
     @Autowired
     private HzConsultAddressService consultAddressService;
+    @Autowired
+    private HzDiagnoseService hzDiagnoseService;
+    @Autowired
+    private RedisTemplate redisTemplate;
+    @Autowired
+    private ConsultPatientService consultPatientService;
 
+    private static SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyyMMdd");
+    @Autowired
+    private HzSupplementReportMapper supplementReportMapper;
+    @Autowired
+    private HzAddressMapper addressMapper;
+    @Autowired
+    private HzConsultAddressMapper  consultAddressMapper;
 
-    /**
-     *
-     * 管理员提交补充切片
-     */
-    @ApiOperation(value = "管理员补充切片上传")
-    @PostMapping("/editSlide.htm")
-    @UserTokenAop
-    public Result editSlide(
-            @ApiParam(name = "consult_id", value = "加密consultId") @RequestParam(value = "consult_id") String consult_id,
-            @ApiParam(name = "slideList", example = "{fileType:文件类型。jpg、excel、word、pdf、ppt、txt、rar,path:文件路径,url:文件下载地址,size:文件大小}", value = "病理切片列表，格式如下：{fileType:文件类型。jpg、excel、word、pdf、ppt、txt、rar,path:文件路径,url:文件下载地址,size:文件大小}") @RequestParam(name = "slideList") String slideList
-    ){
-        Integer consultid=Crypt.desDecryptByInteger(consult_id,Enumeration.SECRET_KEY.CONSULT_ID_KEY);
-        slidesService.deleteSlidesByConsultId(consultid);
-        JSONArray array = JSONArray.fromObject(slideList);
-//        LoginUser loginUser= (LoginUser) request.getSession().getAttribute("loginUser");
-        for (int i = 0; i < array.size(); i++) {
-            JSONObject slideJSON = array.optJSONObject(i);
-            HzSlide slide = new HzSlide();
-            slide.setConsultId(consultid);
-            slide.setHospitalId(10086L);
-            int processStatus = slideJSON.optInt("processStatus", -1);
-            slide.setProcessStatus(processStatus == -1 ? 0 : processStatus);
-            //将type设为补充检查——type为1
-            slide.setType(1);
-            slide.setSlideName(slideJSON.optString("slideName"));
-            slide.setUuid(UUID.randomUUID().toString());
-            slide.setCreateTime(new Date());
-            slide.setClientSlidePath(slideJSON.optString("clientSlidePath"));
-            slide.setCosSlidePath(slideJSON.optString("cosSlidePath"));
-            slide.setSlideSize(slideJSON.optString("slideSize"));
-            slide.setFactoryUuid(slideJSON.optString("factoryUuid"));
-            if (slidesService.insertBySlide(slide)== 0) {
-                return ResultGenerator.genFailResult("上传切片失败！");
-            }
-        }
-        return null;
+    @Autowired
+    private HzPriceConfigService priceConfigService;
+
+    @Autowired
+    private HzConsultAddressService hzConsultAddressService;
+
+    private static NumberFormat nf=NumberFormat.getInstance();
+
+    static {
+        nf.setMinimumIntegerDigits(3);
+        nf.setGroupingUsed(false);
     }
+
+
+    @ApiOperation(value="申请医生申请会诊")
+    @PostMapping("/editConsult.htm")
+    @UserTokenAop
+    public Result editConsult(@RequestBody ConsultInfo consultInfo,@RequestParam String token) throws Exception {
+        Integer consultId = null;
+        try {
+            Integer toDayNo = getDailySum();
+            String consultNo = "BL" + simpleDateFormat.format(new Date()) + nf.format(toDayNo);
+
+            HzConsult hzConsult = new HzConsult();
+            hzConsult.setConsultStatus(consultInfo.getConsultStatus());
+            hzConsult.setConsultNo(consultNo);
+            hzConsult.setCaseTypeId(consultInfo.getCaseTypeId());
+            hzConsult.setParts(consultInfo.getParts());
+            hzConsult.setSubspecialityName(consultInfo.getSubspecialityName());
+            hzConsult.setSlideType(consultInfo.getSlideType());
+            hzConsult.setCaseTypeName(consultInfo.getCaseTypeName());
+            hzConsult.setPhone(consultInfo.getPhone());
+            hzConsult.setPrice(consultInfo.getExpertDoc().getPrice());
+            hzConsult.setCasePresentation(consultInfo.getCasePresentation());
+            hzConsult.setClinicalDiagnosis(consultInfo.getClinicalDiagnosis());
+            hzConsult.setRemake(consultInfo.getPatientRemark());
+            hzConsult.setOldDiagnosis(consultInfo.getOldDiagnosis());
+            hzConsult.setPurpose(StringUtils.strip(consultInfo.getPurpose().toString(), "[]"));
+            hzConsult.setIsDelete(0);
+            hzConsult.setCreateTime(new Date());
+            consultId = consultService.save(hzConsult);
+
+            ConsultPatient consultPatient = new ConsultPatient();
+            consultPatient.setAge(consultInfo.getAge());
+            consultPatient.setSex(consultInfo.getSex());
+            consultPatient.setMzNum(consultInfo.getParamId());
+            consultPatient.setPatientName(consultInfo.getName());
+            consultPatient.setConsultId(consultId);
+            consultPatientService.save(consultPatient);
+
+            hzConsultDoctorService.save(consultId, consultInfo.getExpertDoc(), consultInfo.getApplyDoc());
+
+            slidesService.save(consultInfo.getUploadSlidesList(), consultId, 0);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return ResultGenerator.genSuccessResult(Crypt.desEncrypt(String.valueOf(consultId),Enumeration.SECRET_KEY.CONSULT_ID_KEY));
+    }
+
+    private synchronized Integer getDailySum(){
+        Integer todayNo=Integer.valueOf((String) redisTemplate.opsForValue().get("dailyNum")) ;
+        redisTemplate.opsForValue().set("dailyNum",String.valueOf(todayNo+1));
+        return todayNo;
+    }
+
+//    /**
+//     *
+//     * 管理员提交补充切片
+//     */
+//    @ApiOperation(value = "管理员补充切片上传")
+//    @PostMapping("/editSlide.htm")
+//    @UserTokenAop
+//    public Result editSlide(
+//            @ApiParam(name = "consult_id", value = "加密consultId") @RequestParam(value = "consult_id") String consult_id,
+//            @ApiParam(name = "slideList", example = "{fileType:文件类型。jpg、excel、word、pdf、ppt、txt、rar,path:文件路径,url:文件下载地址,size:文件大小}", value = "病理切片列表，格式如下：{fileType:文件类型。jpg、excel、word、pdf、ppt、txt、rar,path:文件路径,url:文件下载地址,size:文件大小}") @RequestParam(name = "slideList") String slideList
+//    ){
+//        Integer consultid=Crypt.desDecryptByInteger(consult_id,Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+//        slidesService.deleteSlidesByConsultId(consultid);
+//        JSONArray array = JSONArray.fromObject(slideList);
+////        LoginUser loginUser= (LoginUser) request.getSession().getAttribute("loginUser");
+//        for (int i = 0; i < array.size(); i++) {
+//            JSONObject slideJSON = array.optJSONObject(i);
+//            HzSlide slide = new HzSlide();
+//            slide.setConsultId(consultid);
+//            slide.setHospitalId(10086L);
+//            int processStatus = slideJSON.optInt("processStatus", -1);
+//            slide.setProcessStatus(processStatus == -1 ? 0 : processStatus);
+//            //将type设为补充检查——type为1
+//            slide.setType(1);
+//            slide.setSlideName(slideJSON.optString("slideName"));
+//            slide.setUuid(UUID.randomUUID().toString());
+//            slide.setCreateTime(new Date());
+//            slide.setClientSlidePath(slideJSON.optString("clientSlidePath"));
+//            slide.setCosSlidePath(slideJSON.optString("cosSlidePath"));
+//            slide.setSlideSize(slideJSON.optString("slideSize"));
+//            slide.setFactoryUuid(slideJSON.optString("factoryUuid"));
+//            if (slidesService.insertBySlide(slide)== 0) {
+//                return ResultGenerator.genFailResult("上传切片失败！");
+//            }
+//        }
+//        return null;
+//    }
+
+    @ApiOperation(value = "申请医生编辑地址")
+    @PostMapping("/editDefault.htm")
+    public Result editDefault(HttpServletRequest httpServletRequest,@RequestParam("addressId") Integer addressId) throws Exception {
+        String str=tokenUtil.checkToken(httpServletRequest.getCookies()[1].getValue());
+        if (str.equals("token无效")){
+            return ResultGenerator.genFailResult(str);
+        }
+        JSONObject jsonObject=JSONObject.fromObject(str);
+        HzAddress hzAddress=new HzAddress();
+        hzAddress.setId(addressId);
+        hzAddress.setUserId(jsonObject.optLong("userId"));
+        hzAddressService.editAddress(hzAddress,true);
+        return ResultGenerator.genSuccessResult();
+    }
+
 
     @ApiOperation(value = "申请医生编辑地址")
     @PostMapping("/editAddress.htm")
-    @UserTokenAop
     public Result editAddress(
             @ApiParam(name = "address_id", value = "加密addressId") @RequestParam(value = "address_id", required = false) String address_id,
             @ApiParam(name = "province", value = "省份") @RequestParam(value = "province") String province,
             @ApiParam(name = "city", value = "城市") @RequestParam(value = "city") String city,
+            @ApiParam(name = "area",value ="地区") @RequestParam(value="area") String area,
             @ApiParam(name = "address", value = "地址") @RequestParam(value = "address") String address,
             @ApiParam(name = "name", value = "名字") @RequestParam(value = "name") String name,
             @ApiParam(name = "phone", value = "手机号码") @RequestParam(value = "phone") String phone,
-            @ApiParam(name = "isDefault", value = "是否是默认地址") @RequestParam(value = "isDefault") boolean isDefault,
-            @ApiParam(name = "userId", value = "用户id") @RequestParam(value = "userId") Long userId
+            @ApiParam(name = "isDefault", value = "是否是默认地址") @RequestParam(value = "isDefault",required = false) boolean isDefault,
+            @ApiParam(name = "token", value = "用户token") @RequestParam(value = "token") String token
     ) throws Exception {
+        String str=tokenUtil.checkToken(token);
+        if (str.equals("token无效")){
+            return ResultGenerator.genFailResult(str);
+        }
+        JSONObject jsonObject=JSONObject.fromObject(str);
         HzAddress hzAddress=new HzAddress();
-        if (address_id==null){
+        if (address_id!=null){
             hzAddress.setId(Crypt.desDecryptByInteger(address_id, Enumeration.SECRET_KEY.ADDRESS_ID_KEY));
+        }else {
+            hzAddress.setCreateTime(new Date());
+            hzAddress.setIsDelete(0);
+            hzAddress.setType(1);
         }
         hzAddress.setProvince(province);
         hzAddress.setCity(city);
-        hzAddress.setCity(address);
+        hzAddress.setAddress(area+address);
         hzAddress.setName(name);
         hzAddress.setPhone(phone);
-        hzAddress.setUserId(userId);
+        hzAddress.setUserId(jsonObject.optLong("userId"));
         hzAddressService.editAddress(hzAddress,isDefault);
         return ResultGenerator.genSuccessResult();
     }
@@ -195,44 +305,124 @@ public class BlDoctorController {
     }
             /*----------------------------------补充检查  Start------------------------------*/
 
+    @ApiOperation(value = "补充检查-诊断")
+    @PostMapping("/editBCJCByConsultId.htm")
+    public Result editBCJCByConsultId(
+            @RequestBody SupplementInfo supplementInfo,
+            HttpServletRequest request
+    ) throws Exception {
+        Integer consultId=Crypt.desDecryptByInteger(supplementInfo.getConsult_id(), Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+        HzSupplementReport supplementReport = supplementReportService.selectSuppleReport(consultId);
+        if (supplementReport==null){
+            return ResultGenerator.genSuccessResult("别提交了瞎操作!");
+        }
+        supplementReport.setUltimateJudgement(supplementInfo.getUltimateJudgement());
+        supplementReport.setSupplementaryOpinion(supplementInfo.getSupplymentaryOpinion());
+        supplementReportMapper.updateByPrimaryKeySelective(supplementReport);
+        return ResultGenerator.genSuccessResult("补充检查信息提交成功!");
+    }
+
     /**
      * 保存 提交添加切片弹窗
      */
-    @ApiOperation(value = "补充检查-添加切片弹窗保存/提交")
+    @ApiOperation(value = "补充检查-送检申请")
+    @PostMapping("/applyBCJCByExpress.htm")
+    public Result applyBCJC(
+            @RequestParam("consultId")String consultId,@RequestParam("addressId")Integer addressId,
+            HttpServletRequest request
+    ) throws Exception{
+        String token=request.getCookies()[1].getValue();
+        String res=tokenUtil.checkToken(token);
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        JSONObject obj=JSONObject.fromObject(res);
+        HzAddress hzAddress=addressMapper.selectByPrimaryKey(addressId);
+        HzConsultAddress hzConsultAddress=new HzConsultAddress();
+        hzConsultAddress.setType(1);
+        hzConsultAddress.setReturnProvince("浙江省");
+        hzConsultAddress.setReturnCity("杭州市");
+        hzConsultAddress.setReturnAddress("江干区天城路68号万事利大厦A座8楼");
+        hzConsultAddress.setReturnPhone("17826863260");
+        hzConsultAddress.setReturnName("病理会诊中心");
+        hzConsultAddress.setMailProvince(hzAddress.getProvince());
+        hzConsultAddress.setMailCity(hzAddress.getCity());
+        hzConsultAddress.setMailAddress(hzAddress.getAddress());
+        hzConsultAddress.setMailName(hzAddress.getName());
+        hzConsultAddress.setMailPhone(hzAddress.getPhone());
+        hzConsultAddress.setIsDelete(0);
+        Integer consid=Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+        hzConsultAddress.setConsultId(consid );
+        HzConsultAddress e=hzConsultAddressService.selectByConsultId( consid);
+        if (e == null) {
+            hzConsultAddress.setCreateTime(new Date());
+            consultAddressMapper.insert(hzConsultAddress);
+        }else {
+            hzConsultAddress.setId(e.getId());
+            consultAddressMapper.updateByPrimaryKeySelective(hzConsultAddress);
+        }
+        Integer price=priceConfigService.selectPriceByDoctorId(304,obj.optString("position")).getPrice();
+        Integer amount=hzDiagnoseService.getDiagnoseByConsultId(consid).getImmuneTag().split(",").length;
+        HzConsult consult=new HzConsult();
+        consult.setId(consid);
+        consult.setConsultStatus(3);
+        consult.setSupplementSlideType(2);
+        consult.setSupplementPrice(price*amount);
+
+        consultService.updateByConsult(consult);
+        return  ResultGenerator.genSuccessResult("提交成功!");
+    }
+
+
+
+
+
+
+    /**
+     * 保存 提交添加切片弹窗
+     */
+    @ApiOperation(value = "补充检查-添加信息")
     @PostMapping("/setBCJCByConsultId.htm")
-    @UserTokenAop
     public Result setBCJCByConsultId(
-            //补充检查-添加切片弹窗保存/提交
-            @ApiParam(name = "sign", value = "0保存 1提交") @RequestParam(value = "sign") Integer sign,
-            @ApiParam(name = "signtype", value = "0申请提交保存1专家提交保存") @RequestParam(value = "signtype") Integer signtype,
-            @ApiParam(name = "consult_id", value = "加密consult_id") @RequestParam(value = "consult_id") String consult_id,
-            @ApiParam(name = "specialistId", value = "专家id") @RequestParam(value = "specialistId", required = false) String specialistId,
-            @ApiParam(name = "censorate", value = "检查机构") @RequestParam(value = "censorate", required = false) String censorate,
-            @ApiParam(name = "initialJudgement", value = "初步判定") @RequestParam(value = "initialJudgement", required = false) String initialJudgement,
-            @ApiParam(name = "remarkDoctor", value = "申请医生备注") @RequestParam(value = "remarkDoctor", required = false) String remarkDoctor,
-            @ApiParam(name = "slideList", example = "{fileType:文件类型。jpg、excel、word、pdf、ppt、txt、rar,path:文件路径,url:文件下载地址,size:文件大小}", value = "病理切片列表，格式如下：{fileType:文件类型。jpg、excel、word、pdf、ppt、txt、rar,path:文件路径,url:文件下载地址,size:文件大小}") @RequestParam(name = "slideList", required = false) String slideList,
-            @ApiParam(name = "ultimateJudgement", value = "判定结果") @RequestParam(value = "ultimateJudgement", required = false) String ultimateJudgement,
-            @ApiParam(name = "supplementaryOpinion", value = "补充意见") @RequestParam(value = "supplementaryOpinion", required = false) String supplementaryOpinion,
-            @ApiParam(name = "reportPath", value = "报告地址") @RequestParam(value = "reportPath", required = false) String reportPath,
-            @ApiParam(name = "supplementSlideType", value = "补充检查切片模式") @RequestParam(value = "supplementSlideType", required = false) Integer supplementSlideType,
-            @ApiParam(name="priceTypeId", value="价格分类 (分类id (301.常规 302.冰冻 303.细胞 304 补充))", required = false) @RequestParam(value="priceTypeId", required=false) Integer priceTypeId,
-            @ApiParam(name="doctorPositionId", value = "医生职位ID") @RequestParam(value = "doctorPositionId",required = false) Integer doctorPositionId,
+            @RequestBody SupplementInfo supplementInfo,
             HttpServletRequest request
     ) throws Exception {
-
+        String token=request.getCookies()[1].getValue();
+        String res=tokenUtil.checkToken(token);
+        JSONObject obj=JSONObject.fromObject(res);
+        Integer consultId=Crypt.desDecryptByInteger(supplementInfo.getConsult_id(), Enumeration.SECRET_KEY.CONSULT_ID_KEY);
         HzSupplementReport supplementReport = new HzSupplementReport();
         supplementReport.setIsDelete(0);
-        supplementReport.setConsultId(Crypt.desDecryptByInteger(consult_id, Enumeration.SECRET_KEY.CONSULT_ID_KEY));
-        supplementReport.setCensorate(censorate);
-        supplementReport.setInitialJudgement(initialJudgement);
-        supplementReport.setRemarkDoctor(remarkDoctor);
-        supplementReport.setUltimateJudgement(ultimateJudgement);
-        supplementReport.setSupplementaryOpinion(supplementaryOpinion);
-        supplementReport.setReportPath(reportPath);
+        supplementReport.setCommitTime(new Date());
+        supplementInfo.setIsCandel(supplementInfo.getIsCandel());
+        supplementInfo.setMaterialNum(supplementInfo.getMaterialNum());
+        supplementReport.setConsultId(consultId);
+        supplementReport.setCensorate(supplementInfo.getCensorate());
+        supplementReport.setInitialJudgement(supplementInfo.getInitialJudgement());
+        supplementReport.setRemarkDoctor(supplementInfo.getRemark());
+        supplementReportMapper.insert(supplementReport);
 
-        return supplementReportService.saveSupplementReport(specialistId,sign, signtype, supplementReport, slideList,
-               supplementSlideType,priceTypeId,doctorPositionId);
 
+        slidesService.save(supplementInfo.getUploadSlidesList(), consultId, 1);
+
+        Integer price=priceConfigService.selectPriceByDoctorId(304,obj.optString("position")).getPrice();
+        Integer amount=hzDiagnoseService.getDiagnoseByConsultId(consultId).getImmuneTag().split(",").length;
+        HzConsult consult=new HzConsult();
+        consult.setId(consultId);
+        consult.setConsultStatus(9);
+        consult.setSupplementSlideType(1);
+        consult.setSupplementPrice(price*amount);
+
+        consultService.updateByConsult(consult);
+
+        return ResultGenerator.genSuccessResult("补充检查信息提交成功!");
+
+    }
+
+    public static void main(String[] args) {
+        Integer i=1;
+        Integer b=3;
+        System.out.println(i * b);
     }
 
     /**
@@ -243,7 +433,7 @@ public class BlDoctorController {
     @UserTokenAop
     public Result getBCJCsectionByConsId(
             @ApiParam(name = "consult_id", value = "加密consult_id") @RequestParam(value = "consult_id") String consult_id) throws Exception {
-        return ResultGenerator.genSuccessResult(supplementReportService.selectSuppleReport(consult_id));
+        return ResultGenerator.genSuccessResult(supplementReportService.selectSuppleReport(Crypt.desDecryptByInteger(consult_id, Enumeration.SECRET_KEY.CONSULT_ID_KEY)));
     }
 
 

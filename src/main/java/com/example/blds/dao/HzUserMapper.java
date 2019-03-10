@@ -46,7 +46,7 @@ public interface HzUserMapper extends tkMapper<HzUser> {
 
     @Select({
             "select hz_user.*,hz_price_config.price as price from hz_user LEFT join hz_price_config ON hz_user.position=hz_price_config.position_name " +
-                    "where hz_user.description LIKE #{name} and hz_price_config.price_type_id = #{caseTypeId} ORDER BY hz_user.user_score DESC,hz_user.total_consulation DESC"
+                    "where hz_user.name LIKE #{name} and hz_price_config.price_type_id = #{caseTypeId} ORDER BY hz_user.user_score DESC,hz_user.total_consulation DESC"
     })
     List<HzUser> getExpertsInfoAndPriceByTag(@Param("name") String name, @Param("caseTypeId") Integer caseTypeId);
 }

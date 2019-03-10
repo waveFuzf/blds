@@ -3,6 +3,7 @@ package com.example.blds.controller.bl;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.aop.UserTokenAop;
+import com.example.blds.dao.DiagnoseInfo;
 import com.example.blds.dao.HzConsultMapper;
 import com.example.blds.dao.HzDiagnoseMapper;
 import com.example.blds.entity.HzConsult;
@@ -17,6 +18,8 @@ import com.example.blds.util.Enumeration;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Controller;
@@ -28,6 +31,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpSession;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 病理专家（上级）操作病历控制层
@@ -76,42 +80,64 @@ public class BlExpertContorller {
     public Result expertAddDiagnose(
             @ApiParam(name = "consultId", value = "病例id") @RequestParam(value = "consultId")
                     String consultIdString,
-            @ApiParam(name = "consultStatus", value = "病例状态 (4.保存诊断草稿；6.诊断并签发;12.待补充)") @RequestParam(value = "consultStatus", required = false) Integer consultStatus,
             @ApiParam(name = "immuneTag", value = "免疫组化标记物") @RequestParam(value = "immuneTag", required = false) String immuneTag,
-            @ApiParam(name = "immuneRemark", value = "免疫组化备注") @RequestParam(value = "immuneRemark", required = false) String immuneRemark,
             @ApiParam(name = "materialNum", value = "白片的数量") @RequestParam(value = "materialNum", required = false) Integer materialNum,
-            @ApiParam(name = "isCandel", value = "蜡块的数量")  @RequestParam(value = "isCandel", required = false) Integer isCandel,
+            @ApiParam(name = "isCandel", value = "蜡块的数量")  @RequestParam(value = "isCandle", required = false) boolean isCandel,
             @ApiIgnore HttpSession session
     ){
 
-        Integer consultId = Crypt.desDecryptByInteger(consultIdString, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
-        HzDiagnose diagnose = new HzDiagnose();
-        diagnose.setConsultId(consultId);
-        diagnose.setIsDelete(0);
-        diagnose = diagnoseMapper.selectOne(diagnose);
+        Integer result;
 
-        HzDiagnose diagno = new HzDiagnose();
-        diagno.setImmuneTag(immuneTag);
-        diagno.setImmuneRemark(immuneRemark);
-        diagno.setMaterialNum(materialNum);
-        diagno.setIsCandle(isCandel);
-        diagno.setIsDelete(0);
-        diagno.setConsultId(consultId);
+        //1、获取并判断病例状态
+        Integer consultId=Crypt.desDecryptByInteger(consultIdString, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+        HzConsult consult = new HzConsult();
+        consult.setId(consultId);
+        consult=consultMapper.selectByPrimaryKey(consult);
 
-        if (diagnose == null) {
-            diagno.setCreateTime(new Date());
-            diagnoseMapper.insertSelective(diagno);
-        }else {
-            diagnoseService.updateByConsultIdSelective(diagno);
+        if (consult == null) {
+            return ResultGenerator.genFailResult("该病例不存在");
         }
-        HzConsult consultUpdate = new HzConsult();
+        if (consult.getConsultStatus() == Enumeration.CONSULT_STATUS.DIAGNOSED
+                || consult.getConsultStatus() == Enumeration.CONSULT_STATUS.RETURNED) {
+            return ResultGenerator.genFailResult("该病例已诊断");
+        }
+        HzDiagnose updateInfo=new HzDiagnose();
+        updateInfo.setImmuneTag(immuneTag);
+        updateInfo.setMaterialNum(materialNum);
+        updateInfo.setIsCandle(isCandel?1:0);
+        updateInfo.setIsDelete(0);
+        updateInfo.setConsultId(consultId);
 
-        consultUpdate.setId(consultId);
-        consultUpdate.setConsultStatus(consultStatus);
-        consultMapper.updateCaseStatusById(consultId,consultStatus);
+        HzDiagnose hzDiagnose= diagnoseService.getDiagnoseByConsultId(consultId);
+        if (hzDiagnose==null){
+            updateInfo.setConsultId(consultId);
+            updateInfo.setDiagnoseTime(new Date());
+            result=diagnoseMapper.insert(updateInfo);
+        }else {
+            updateInfo.setId(hzDiagnose.getId());
+            result=diagnoseMapper.updateByPrimaryKeySelective(updateInfo);
+        }
 
-        return ResultGenerator.genSuccessResult("成功!");
+        return ResultGenerator.genSuccessResult(result);
+
     }
+
+    @ApiOperation(value = "专家诊断")
+    @PostMapping("/getDiagnoseDetail.htm")
+    @UserTokenAop
+    @ResponseBody
+    public Result getDiagnoseDetail(@ApiParam(name = "consultId", value = "病例id") @RequestParam(value = "consultId")
+                                                String consultIdString){
+        HzDiagnose hzDiagnose=diagnoseService.
+            getDiagnoseByConsultId(Crypt.desDecryptByInteger(consultIdString, Enumeration.SECRET_KEY.CONSULT_ID_KEY));
+        DiagnoseInfo diagnoseInfo=new DiagnoseInfo();
+        if(hzDiagnose==null){
+            return ResultGenerator.genSuccessResult(diagnoseInfo);
+        }
+        BeanUtils.copyProperties(hzDiagnose, diagnoseInfo);
+        return ResultGenerator.genSuccessResult(diagnoseInfo);
+    }
+
 
 
     @ApiOperation(value = "专家诊断")
@@ -121,32 +147,23 @@ public class BlExpertContorller {
     public Result expertDiagnosing(
             @ApiParam(name = "consultId", value = "病例id") @RequestParam(value = "consultId")
                     String consultIdString,
-            @ApiParam(name = "slideEstimate", value = "切片质量评价（1：质量不合格，2：质量基本合格，3：质量合格，4：质量优秀，5：质量不合格（设备），6：质量不合格（制片））", required = false)
+            @ApiParam(name = "slideEstimate", value = "切片质量评价（1：质量不合格，2：质量基本合格，3：质量合格，4：质量优秀）", required = false)
             @RequestParam(value = "slideEstimate", required = false) Integer slideEstimate,
-            @ApiParam(name = "diagnosisEstimate", value = "初诊质量（1：没有诊断，2：诊断不正确，3：诊断基本正确，4：诊断完全正确，5：诊断不明确）")
+            @ApiParam(name = "diagnosisEstimate", value = "初诊质量（1：诊断不正确，2：诊断基本正确，3：诊断完全正确，4：诊断不明确）")
             @RequestParam(value = "diagnosisEstimate", required = false) Integer diagnosisEstimate,
             @ApiParam(name = "mirrorView", value = "镜下所见")
             @RequestParam(value = "mirrorView", required = false) String mirrorView,
             @ApiParam(name = "diagnose", value = "专家意见")
-            @RequestParam(value = "diagnose", required = false) String diagnose,
-            @ApiParam(name = "remark", value = "专家备注")
-            @RequestParam(value = "remark", required = false) String remark,
-            @ApiParam(name = "shotList", value = "截图列表,[{'url':'xxx'}]", required = false)
-            @RequestParam(value = "shotList", required = false) String shotListString,
-            @ApiParam(name = "consultStatus", value = "病例状态 (4.保存诊断草稿；6.诊断并签发;12.待补充)") @RequestParam(value = "consultStatus", required = false) Integer consultStatus,
-            @ApiParam(name = "immuneTag", value = "免疫组化标记物") @RequestParam(value = "immuneTag", required = false) String immuneTag,
-            @ApiParam(name = "immuneRemark", value = "免疫组化备注") @RequestParam(value = "immuneRemark", required = false) String immuneRemark,
-            @ApiParam(name = "materialNum", value = "白片的数量") @RequestParam(value = "materialNum", required = false) Integer materialNum,
-            @ApiParam(name = "isCandel", value = "蜡块的数量")  @RequestParam(value = "isCandel", required = false) Integer isCandel,
-            @ApiIgnore HttpSession session
+            @RequestParam(value = "diagnose", required = false) String diagnose
     ) throws Exception {
-        if (consultStatus != Enumeration.CONSULT_STATUS.UNDIAGNOSED && consultStatus != Enumeration.CONSULT_STATUS.DIAGNOSED && consultStatus != 12) {
-            return ResultGenerator.genFailResult("请检查病例状态(4 or 6 or 12)");
-        }
+        Integer result;
 
         //1、获取并判断病例状态
-        Integer consultId = Crypt.desDecryptByInteger(consultIdString, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
-        HzConsult consult = consultService.selectById(consultId);
+        Integer consultId=Crypt.desDecryptByInteger(consultIdString, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+        HzConsult consult = new HzConsult();
+        consult.setId(consultId);
+        consult=consultMapper.selectByPrimaryKey(consult);
+
         if (consult == null) {
             return ResultGenerator.genFailResult("该病例不存在");
         }
@@ -154,8 +171,24 @@ public class BlExpertContorller {
                 || consult.getConsultStatus() == Enumeration.CONSULT_STATUS.RETURNED) {
             return ResultGenerator.genFailResult("该病例已诊断");
         }
+        HzDiagnose updateInfo=new HzDiagnose();
+        updateInfo.setIsDelete(0);
+        updateInfo.setSlideEstimate(slideEstimate);
+        updateInfo.setDiagnosisEstimate(diagnosisEstimate);
+        updateInfo.setDiagnose(diagnose);
+        updateInfo.setMirrorView(mirrorView);
 
-        return null;
+        HzDiagnose hzDiagnose= diagnoseService.getDiagnoseByConsultId(consultId);
+        if (hzDiagnose==null){
+            updateInfo.setConsultId(consultId);
+            updateInfo.setDiagnoseTime(new Date());
+            result=diagnoseMapper.insert(updateInfo);
+        }else {
+            updateInfo.setId(hzDiagnose.getId());
+            result=diagnoseMapper.updateByPrimaryKeySelective(updateInfo);
+        }
+
+        return ResultGenerator.genSuccessResult(result);
     }
 
     @ApiOperation(value = "病例退回")

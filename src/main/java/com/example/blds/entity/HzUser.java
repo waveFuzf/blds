@@ -1,7 +1,9 @@
 package com.example.blds.entity;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import com.example.blds.CustomJsonDateDeserializer;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
@@ -13,6 +15,7 @@ import java.util.List;
 @Data
 public class HzUser {
     @Id
+    @JSONField(serialize=false)
     private Long id;
 
     private Long userId;
@@ -58,6 +61,6 @@ public class HzUser {
     private List<HzEvaluate> evaluates;
 
     @Transient
-    private String price;
+    private Integer price;
 
 }

@@ -1,7 +1,12 @@
 package com.example.blds.entity;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.example.blds.CustomJsonDateDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Transient;
 import java.util.Date;
@@ -10,6 +15,7 @@ import java.util.List;
 @Data
 public class HzConsult {
     @Id
+    @GeneratedValue(generator = "JDBC")
     private Integer id;
 
     private Integer slideType;
@@ -20,9 +26,11 @@ public class HzConsult {
 
     private String consultNo;
 
-    private Integer verifyStatus;
+    private Integer caseTypeId;
 
-    private String verifyReason;
+//    private Integer verifyStatus;
+
+//    private String verifyReason;
 
     private Integer isCancel;
 
@@ -65,6 +73,21 @@ public class HzConsult {
     private Date deleteTime;
 
     private Integer preferentialPrice;
+
+    private String phone;
+
+    private String casePresentation;
+
+    private String clinicalDiagnosis;
+
+    private String remake;
+
+    private String oldDiagnosis;
+
+    private String purpose;
+
+    private List<HzSlide> hzSlides;
+
     @Transient
     private String consult_id;
 
@@ -74,219 +97,17 @@ public class HzConsult {
     @Transient
     private List<HzConsultDoctor> doctors;
 
-    public Integer getId() {
-        return id;
+    @Transient
+    private ConsultPatient consultPatient;
+
+    @Transient
+    private Integer doctorType;
+
+    public static void main(String[] args) {
+        HzConsult hzConsult=new HzConsult();
+        hzConsult.setCreateTime(new Date());
+        System.out.println(hzConsult);
+        System.out.println(JSON.toJSON(hzConsult));
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Integer getSlideType() {
-        return slideType;
-    }
-
-    public void setSlideType(Integer slideType) {
-        this.slideType = slideType;
-    }
-
-    public Integer getSupplementSlideType() {
-        return supplementSlideType;
-    }
-
-    public void setSupplementSlideType(Integer supplementSlideType) {
-        this.supplementSlideType = supplementSlideType;
-    }
-
-    public Integer getConsultStatus() {
-        return consultStatus;
-    }
-
-    public void setConsultStatus(Integer consultStatus) {
-        this.consultStatus = consultStatus;
-    }
-
-    public String getConsultNo() {
-        return consultNo;
-    }
-
-    public void setConsultNo(String consultNo) {
-        this.consultNo = consultNo == null ? null : consultNo.trim();
-    }
-
-    public Integer getVerifyStatus() {
-        return verifyStatus;
-    }
-
-    public void setVerifyStatus(Integer verifyStatus) {
-        this.verifyStatus = verifyStatus;
-    }
-
-    public String getVerifyReason() {
-        return verifyReason;
-    }
-
-    public void setVerifyReason(String verifyReason) {
-        this.verifyReason = verifyReason == null ? null : verifyReason.trim();
-    }
-
-    public Integer getIsCancel() {
-        return isCancel;
-    }
-
-    public void setIsCancel(Integer isCancel) {
-        this.isCancel = isCancel;
-    }
-
-    public Integer getPayType() {
-        return payType;
-    }
-
-    public void setPayType(Integer payType) {
-        this.payType = payType;
-    }
-
-    public String getPayUrl() {
-        return payUrl;
-    }
-
-    public void setPayUrl(String payUrl) {
-        this.payUrl = payUrl == null ? null : payUrl.trim();
-    }
-
-    public String getPayOrderNo() {
-        return payOrderNo;
-    }
-
-    public void setPayOrderNo(String payOrderNo) {
-        this.payOrderNo = payOrderNo == null ? null : payOrderNo.trim();
-    }
-
-    public Long getPayOrderCreateTime() {
-        return payOrderCreateTime;
-    }
-
-    public void setPayOrderCreateTime(Long payOrderCreateTime) {
-        this.payOrderCreateTime = payOrderCreateTime;
-    }
-
-    public Integer getDrawBackStatus() {
-        return drawBackStatus;
-    }
-
-    public void setDrawBackStatus(Integer drawBackStatus) {
-        this.drawBackStatus = drawBackStatus;
-    }
-
-    public String getCaseTypeName() {
-        return caseTypeName;
-    }
-
-    public void setCaseTypeName(String caseTypeName) {
-        this.caseTypeName = caseTypeName == null ? null : caseTypeName.trim();
-    }
-
-    public String getSubspecialityName() {
-        return subspecialityName;
-    }
-
-    public void setSubspecialityName(String subspecialityName) {
-        this.subspecialityName = subspecialityName == null ? null : subspecialityName.trim();
-    }
-
-    public String getParts() {
-        return parts;
-    }
-
-    public void setParts(String parts) {
-        this.parts = parts == null ? null : parts.trim();
-    }
-
-    public Integer getUnionId() {
-        return unionId;
-    }
-
-    public void setUnionId(Integer unionId) {
-        this.unionId = unionId;
-    }
-
-    public Integer getPrice() {
-        return price;
-    }
-
-    public void setPrice(Integer price) {
-        this.price = price;
-    }
-
-    public Integer getSupplementPrice() {
-        return supplementPrice;
-    }
-
-    public void setSupplementPrice(Integer supplementPrice) {
-        this.supplementPrice = supplementPrice;
-    }
-
-    public String getReasonCancel() {
-        return reasonCancel;
-    }
-
-    public void setReasonCancel(String reasonCancel) {
-        this.reasonCancel = reasonCancel == null ? null : reasonCancel.trim();
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason == null ? null : reason.trim();
-    }
-
-    public Date getSupplementCommitTime() {
-        return supplementCommitTime;
-    }
-
-    public void setSupplementCommitTime(Date supplementCommitTime) {
-        this.supplementCommitTime = supplementCommitTime;
-    }
-
-    public Date getSupplementReportTime() {
-        return supplementReportTime;
-    }
-
-    public void setSupplementReportTime(Date supplementReportTime) {
-        this.supplementReportTime = supplementReportTime;
-    }
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
-
-    public Integer getIsDelete() {
-        return isDelete;
-    }
-
-    public void setIsDelete(Integer isDelete) {
-        this.isDelete = isDelete;
-    }
-
-    public Date getDeleteTime() {
-        return deleteTime;
-    }
-
-    public void setDeleteTime(Date deleteTime) {
-        this.deleteTime = deleteTime;
-    }
 }

@@ -2,9 +2,11 @@ package com.example.blds.entity;
 
 import lombok.Data;
 
+import javax.persistence.Id;
 import java.util.Date;
 @Data
 public class HzFile {
+    @Id
     private Long id;
 
     private Integer consultId;

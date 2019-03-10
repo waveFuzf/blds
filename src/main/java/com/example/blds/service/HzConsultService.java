@@ -1,5 +1,6 @@
 package com.example.blds.service;
 
+import com.example.blds.entity.CountResult;
 import com.example.blds.entity.HzConsult;
 import com.example.blds.entity.HzConsultDoctor;
 
@@ -21,4 +22,10 @@ public interface HzConsultService {
     Integer updateIsDeleteByConsultId(Integer consId);
 
     int updateByConsult(HzConsult consult);
+
+    Integer save(HzConsult hzConsult);
+
+    CountResult getCount(String user_id, Integer doctor_type);
+
+    List<HzConsult> getConsultListByInfo(Integer userId, List<Integer> consultStatusList, Integer isCancel, Integer doctorType);
 }

@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.util.List;
+
 public interface HzSlideMapper extends tkMapper<HzSlide> {
     @Update({
             "Update hz_slide Set is_delete=1 , delete_time=now() where consult_id=#{consult_id} and is_delete=0"
@@ -20,4 +22,9 @@ public interface HzSlideMapper extends tkMapper<HzSlide> {
             "select * from hz_slide where uuid=#{uuid} and is_delete=0"
     })
     HzSlide selectByUuid(String uuid);
+
+    @Select({
+            "select * from hz_slide where consult_id=#{consultId} and type=#{type}"
+    })
+    List<HzSlide> selectByConsultId(@Param("consultId") Integer consultId, @Param("type")Integer type);
 }

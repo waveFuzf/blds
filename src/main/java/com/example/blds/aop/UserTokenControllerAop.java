@@ -28,6 +28,9 @@ public class UserTokenControllerAop {
     @Around("userTokenPointCut()")
     public Result around(ProceedingJoinPoint proceedingJoinPoint) throws  Throwable {
         String token=getRequest().getParameter("token");
+        if (token==null){
+            token=getRequest().getCookies()[1].getValue();
+        }
         String str=tokenUtil.checkToken(token);
         if (str.equals("token无效")){
             return ResultGenerator.genFailResult(str);

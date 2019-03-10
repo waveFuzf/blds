@@ -1,36 +1,104 @@
 package com.example.blds.controller;
 
-import io.swagger.annotations.ApiParam;
+import com.example.blds.Re.Result;
+import com.example.blds.Re.ResultGenerator;
+import com.example.blds.dao.HzConsultAddressMapper;
+import com.example.blds.dao.UploadSlidesMapper;
+import com.example.blds.entity.HzConsult;
+import com.example.blds.entity.HzConsultAddress;
+import com.example.blds.entity.UploadSlides;
+import com.example.blds.service.HzConsultAddressService;
+import com.example.blds.util.Crypt;
+import com.example.blds.util.Enumeration;
 import com.example.blds.util.TokenUtil;
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.util.Date;
 import java.util.UUID;
 
 @CrossOrigin
 @Controller
 @RequestMapping("/file")
 public class FileController {
+    @Value("${file.url}")
+    private String fileUrl;
+    @Value("${url}")
+    private String url;
     @Autowired
     private TokenUtil tokenUtil;
+    @Autowired
+    private UploadSlidesMapper uploadSlidesMapper;
+    @Autowired
+    private HzConsultAddressService hzConsultAddressService;
+    @Autowired
+    private HzConsultAddressMapper hzConsultAddressMapper;
 
-
-    public String upload(@RequestPart("file") MultipartFile file, HttpServletRequest request, @RequestParam(required = false)String token ) throws IOException {
-        String str=tokenUtil.checkToken(token);
+    @PostMapping(value = "/upload")
+    @ResponseBody
+    public Result upload(@RequestPart("file") MultipartFile file, HttpServletRequest request) throws IOException {
+        //1切片
+        String str=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (str.equals("token无效")){
+            return ResultGenerator.genFailResult("用户token无效");
+        }
+        if (!file.getContentType().equals("image/png")){
+            return ResultGenerator.genFailResult("文件格式错误!");
+        }
         JSONObject jsonObject=JSONObject.fromObject(str);
-        UUID.randomUUID().toString().replace("-","");
-        File targetFile =new File(ResourceUtils.getFile("classpath:").getPath()+"\\slides\\",file.getOriginalFilename());
-        file.transferTo(targetFile);
+        String uuid=UUID.randomUUID().toString().replace("-","");
+
+        try {
+            File targetFile =new File(fileUrl+"\\slides\\",uuid+".png");
+            file.transferTo(targetFile);
+            UploadSlides uploadSlides=new UploadSlides();
+            uploadSlides.setCreateTime(new Date());
+            uploadSlides.setPath(url+"slides/"+uuid+".png");//待修改
+            uploadSlides.setUuid(uuid);
+            uploadSlides.setUploaderId(jsonObject.optInt("userId"));
+            if (uploadSlidesMapper.insert(uploadSlides)==1){
+                return ResultGenerator.genSuccessResult(uploadSlides);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         return null;
     }
+
+    @PostMapping(value = "/uploadExpress")
+    @ResponseBody
+    public Result uploadExpress(@RequestPart("file") MultipartFile file, HttpServletRequest request,@RequestParam String consultId,@RequestParam Integer type) throws IOException {
+        String str=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (str.equals("token无效")){
+            return ResultGenerator.genFailResult("用户token无效");
+        }
+        Example example=new Example(HzConsultAddress.class);
+        example.createCriteria().andEqualTo("type",type).andEqualTo("consultId",Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY));
+        HzConsultAddress hzConsultAddress=hzConsultAddressMapper.selectOneByExample(example);
+        String uuid=UUID.randomUUID().toString().replace("-","");
+        try {
+            File targetFile =new File(fileUrl+"\\express\\",uuid+".png");
+            file.transferTo(targetFile);
+            hzConsultAddress.setMailPdf(url+"express/"+uuid+".png");
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return ResultGenerator.genSuccessResult(hzConsultAddressMapper.updateByPrimaryKey(hzConsultAddress));
+    }
+
+
 
     @GetMapping(value = "/download")
     @ResponseBody

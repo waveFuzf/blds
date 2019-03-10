@@ -11,9 +11,9 @@ public class HzPriceConfigServiceImpl implements HzPriceConfigService {
     @Autowired
     private HzPriceConfigMapper configMapper;
     @Override
-    public HzPriceConfig selectPriceByDoctorId(Integer priceTypeId, Integer doctorPositionId) {
+    public HzPriceConfig selectPriceByDoctorId(Integer priceTypeId, String position) {
         Example example=new Example(HzPriceConfig.class);
-        example.createCriteria().andEqualTo("priceTypeId",priceTypeId).andEqualTo("doctorPositionId",doctorPositionId);
+        example.createCriteria().andEqualTo("priceTypeId",priceTypeId).andEqualTo("positionName",position);
         return configMapper.selectOneByExample(example);
     }
 }

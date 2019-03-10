@@ -12,7 +12,7 @@
 
 
         <jdbcConnection driverClass="com.mysql.jdbc.Driver"
-                        connectionURL="jdbc:mysql://127.0.0.1:3306/blds" userId="root" password="milk8898">
+                        connectionURL="jdbc:mysql://180.76.238.185:3306/blds" userId="fuzf" password="milk8898">
         </jdbcConnection>
         <javaTypeResolver>
             <property name="forceBigDecimals" value="false"/>
@@ -31,6 +31,6 @@
             <property name="enableSubPackages" value="true"/>
         </javaClientGenerator>
 
-        <table tableName="upload_slides" />
+        <table tableName="consult_patient" />
     </context>
 </generatorConfiguration>

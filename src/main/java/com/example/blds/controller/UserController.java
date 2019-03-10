@@ -217,7 +217,7 @@ public class UserController {
             return ResultGenerator.genSuccessResult(hzUsers,((Page) hzUsers).getTotal());
         }else  {
             List<HzUser> hzUsers = userService.getExpertsInfoByName(name,pageSize,pageNo,caseTypeId);
-            return ResultGenerator.genSuccessResult(hzUsers);
+            return ResultGenerator.genSuccessResult(hzUsers,((Page) hzUsers).getTotal());
         }
 
     }
@@ -233,9 +233,10 @@ public class UserController {
     @ResponseBody
     public Result getExpertsInfoByName(@ApiParam("name")@RequestParam(required = false) String name,
                                  @ApiParam(value = "页面size",example = "1")@RequestParam(required = false) Integer pageSize,
-                                 @ApiParam(value = "第几页",example = "1")@RequestParam(required = false) Integer pageNo){
-        List<HzUser> hzUsers = userService.getExpertsInfoByName(name,pageSize,pageNo);
-        return ResultGenerator.genSuccessResult(hzUsers);
+                                 @ApiParam(value = "第几页",example = "1")@RequestParam(required = false) Integer pageNo,
+                                       @ApiParam(value = "类型",example = "1")@RequestParam(required = false) Integer caseTypeId){
+        List<HzUser> hzUsers = userService.getExpertsInfoByName(name,pageSize,pageNo,caseTypeId);
+        return ResultGenerator.genSuccessResult(hzUsers,((Page) hzUsers).getTotal());
     }
 
 

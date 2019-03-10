@@ -17,6 +17,11 @@ public class Crypt {
 
     public static Base64 base64=new Base64();
 
+    public static void main(String[] args) throws Exception {
+        String s=desEncrypt("1",Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+        System.out.println(s);
+    }
+
     /**
      * 加密
      * @param input  明文
@@ -82,6 +87,7 @@ public class Crypt {
         consultList.forEach((e)->{
             try {
                 e.setConsult_id(desEncrypt(e.getId().toString(),strkey));
+                e.setId(null);
             } catch (Exception e1) {
                 throw new RuntimeException("加密错误");
             }

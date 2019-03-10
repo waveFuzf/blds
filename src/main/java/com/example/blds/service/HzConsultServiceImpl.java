@@ -1,10 +1,12 @@
 package com.example.blds.service;
 
 import com.example.blds.dao.HzConsultMapper;
+import com.example.blds.entity.CountResult;
 import com.example.blds.entity.HzConsult;
 import com.example.blds.entity.HzConsultDoctor;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
@@ -70,5 +72,21 @@ public class HzConsultServiceImpl implements HzConsultService {
     @Override
     public int updateByConsult(HzConsult consult) {
         return hzConsultMapper.updateByPrimaryKeySelective(consult);
+    }
+
+    @Override
+    public Integer save(HzConsult hzConsult) {
+        hzConsultMapper.insert(hzConsult);
+        return hzConsult.getId();
+    }
+
+    @Override
+    public CountResult getCount(String user_id, Integer doctor_type) {
+        return hzConsultMapper.getCount(user_id,doctor_type);
+    }
+
+    @Override
+    public List<HzConsult> getConsultListByInfo(Integer userId, List<Integer> consultStatusList, Integer isCancel, Integer doctorType) {
+        return hzConsultMapper.getConsultListByInfo(userId,consultStatusList,isCancel,doctorType);
     }
 }

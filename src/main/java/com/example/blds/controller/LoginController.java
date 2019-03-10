@@ -17,12 +17,15 @@ import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ByteSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileNotFoundException;
 
 @CrossOrigin
 @RestController
@@ -55,7 +58,7 @@ public class LoginController {
         password = new SimpleHash("md5", password, ByteSource.Util.bytes(""), 2).toHex();
         UsernamePasswordToken token = new UsernamePasswordToken(username, password);
         try {
-            subject.login(token);//通过MyshiroRealm的doGetAuthenticationInfo()方法来验证是否正确
+            subject.login(token);//通过 MyshiroRealm的doGetAuthenticationInfo()方法来验证是否正确
         } catch (AuthenticationException e) {
             token.clear();
             return ResultGenerator.genFailResult("登录失败，用户名或密码错误！");
@@ -72,10 +75,5 @@ public class LoginController {
                          @ApiParam(value = "用户名", required = true) @RequestParam(value = "username") String username){
         tokenUtil.deleteToken(token);
         return "退出成功！";
-    }
-    @PostMapping("checktoken")
-    public String checkToken(@ApiParam(value = "用户token", required = true) @RequestParam(value = "token") String token){
-        String checkuser=tokenUtil.checkToken(token);
-        return checkuser;
     }
 }

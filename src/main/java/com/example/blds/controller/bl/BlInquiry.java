@@ -7,8 +7,10 @@ import com.example.blds.entity.*;
 import com.example.blds.service.*;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
+import com.example.blds.util.TokenUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -19,10 +21,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.ServletRequest;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,6 +43,8 @@ import java.util.List;
 @Controller
 public class BlInquiry {
 	private final Logger logger = LoggerFactory.getLogger(BlInquiry.class);
+	@Autowired
+	private TokenUtil tokenUtil;
 
 	@Autowired
 	private HzConsultService consultService;
@@ -59,7 +68,8 @@ public class BlInquiry {
 	@ApiOperation(value = "获取病历详情(包括图片，切片)")
 	@PostMapping("/consultDetail.htm")
 	public Result consultDetail(
-			@ApiParam(name = "consult_id", value = "加密consultId") @RequestParam(value = "consult_id") String consult_id
+			@ApiParam(name = "consultId", value = "加密consultId") @RequestParam(value = "consultId") String consult_id,
+			@ApiParam(name = "token", value = "token")@RequestParam(value = "token") String token
 	) throws Exception {
 		Integer consultId = Crypt.desDecryptByInteger(consult_id, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
 		HzConsult consult = consultService.selectById(consultId);
@@ -78,11 +88,15 @@ public class BlInquiry {
 		return ResultGenerator.genSuccessResult(diagnoseService.getDiagnoseByConsultId(consultId));
 	}
 
-	@UserTokenAop
 	@ApiOperation(value = "获取用户回寄地址")
 	@RequestMapping(method = RequestMethod.POST, value = "/getAddresses.htm")
-	public Result getAddresses(@ApiParam(name = "user_id",value = "用户id") @RequestParam(value = "user_id") String userId) {
-		List<HzAddress> addresses = addressService.selectByUserId(userId);
+	public Result getAddresses(HttpServletRequest httpServletRequest) {
+		String str=tokenUtil.checkToken(httpServletRequest.getCookies()[1].getValue());
+		if (str.equals("token无效")){
+			return ResultGenerator.genFailResult(str);
+		}
+		JSONObject jsonObject=JSONObject.fromObject(str);
+		List<HzAddress> addresses = addressService.selectByUserId(jsonObject.optString("userId"));
 		return ResultGenerator.genSuccessResult(addresses);
 	}
 
@@ -100,54 +114,57 @@ public class BlInquiry {
 	@ApiOperation(value = "医生端获取病例列表")
 	@PostMapping("/doctorGetConsultList.htm")
 	@ResponseBody
-	@UserTokenAop
 	public Result getConsultListToApplyMe(
-			@ApiParam(name = "doctorType", value = "医生类别。0申请，1专家，2复审专家。") @RequestParam(value =
-					"doctorType", required = true) Integer doctorType,
-			@ApiParam(name = "patientName", value = "患者姓名") @RequestParam(value = "patientName", required = false)
-					String patientName,
-			@ApiParam(name = "consultStatusList", value = "病例状态,1草稿；2待支付；3待收货；4待诊断；5已退回；6已诊断；12待补充；13待二次诊断 。60未审核 61审核通过（已诊断+审核通过） " +
-					"62表示审核不通过 63表示已结算") @RequestParam(value = "consultStatusList", required = false) String
-					consultStatusList,
-			@ApiParam(name = "commitStartTime", value = "开始时间 yyyy-MM-dd") @RequestParam(value = "commitStartTime",
-					required = false) String commitStartTime,
-			@ApiParam(name = "commitEndTime", value = "结束时间 yyyy-MM-dd") @RequestParam(value = "commitEndTime",
-					required = false) String commitEndTime,
+			@ApiParam(name = "userId", value = "用户id") @RequestParam(value =
+					"userId") Integer userId,
 			@ApiParam(name = "pageSize", value = "页面大小") @RequestParam(value = "pageSize", required = false,
 					defaultValue = "10") Integer pageSize,
 			@ApiParam(name = "pageNum", value = "页码数") @RequestParam(value = "pageNum", required = false,
 					defaultValue = "1") Integer pageNum,
 			@ApiParam(name = "isCancel", value = "是否取消",example = "1") @RequestParam(value = "isCancel", required = false) Integer
 					isCancel,
-			@ApiParam(name = "statusType", value = "statusType",example = "1") @RequestParam(value = "statusType", required =
-					false) Integer statusType,
-			HttpServletRequest request,
-			HttpSession session
+			@ApiParam(name = "doctorType", value = "类型") @RequestParam(value = "doctorType") Integer
+					doctorType
 	) throws UnsupportedEncodingException {
-		return null;
+		List<Integer> consultStatusList=null;
+		if (pageSize==null){
+			pageSize=10;
+		}
+		if (pageNum==null){
+			pageNum=1;
+		}
+		if (doctorType==1){
+			consultStatusList= Arrays.asList(3,4,6,8,9);
+		}
+
+		Page<HzUser> pageInfo = PageHelper.startPage(pageNum, pageSize);
+		List<HzConsult> consultList=consultService.getConsultListByInfo(userId,consultStatusList,isCancel,doctorType);
+		consultList=Crypt.desEncryptConsultList(consultList,Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+		return ResultGenerator.genSuccessResult(pageInfo,pageInfo.getTotal());
 	}
 
 	@ApiOperation(value = "获取收藏列表")
 	@PostMapping("/getConsultCollection.htm")
 	@ResponseBody
-	@UserTokenAop
 	public Result getConsultCollection(
-			@ApiParam(name = "doctorType", value = "医生类别。0申请，1专家，2复审专家。", required = true,example = "1") @RequestParam(value =
-					"doctorType", required = true) Integer doctorType,
 			@ApiParam(name = "pageSize", value = "页面大小",example = "1") @RequestParam(value = "pageSize", required = false,
 					defaultValue = "10") Integer pageSize,
 			@ApiParam(name = "pageNum", value = "页码数",example = "1") @RequestParam(value = "pageNum", required = false,
 					defaultValue = "1") Integer pageNum,
-			@ApiParam(name = "userId", value = "用户id") @RequestParam(value = "userId") Long userId
+			HttpServletRequest request
 	) throws UnsupportedEncodingException {
+		String token=request.getCookies()[1].getValue();
+		String res=tokenUtil.checkToken(token);
+		if (res.equals("token无效")){
+			return ResultGenerator.genFailResult(res);
+		}
 		Page<HzConsult> pageInfo =PageHelper.startPage(pageNum, pageSize);
 
 		HzConsultDoctor consultDoctor = new HzConsultDoctor();
 		consultDoctor.setCollection(1);
-		consultDoctor.setDoctorType(doctorType);
-		consultDoctor.setDoctorId(userId);
+		consultDoctor.setDoctorId(JSONObject.fromObject(res).optLong("userId"));
 		List<HzConsult> list = consultService.getConsultList(consultDoctor);
-		return ResultGenerator.genSuccessResult(pageInfo);
+		return ResultGenerator.genSuccessResult(pageInfo,pageInfo.getTotal());
 	}
 
 	@ApiOperation(value = "运营获取病例列表")
@@ -365,6 +382,17 @@ public class BlInquiry {
 		Integer id = Crypt.desDecryptByInteger(consult_id, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
 		HzConsult consult = consultService.selectById(id);
 		return ResultGenerator.genSuccessResult(consult);
+	}
+
+	@UserTokenAop
+	@ApiOperation(value = "根据userId获取完成/未完成的数量")
+	@PostMapping("/getCount.htm")
+	public Result getCount(
+			@ApiParam(name = "userId", value = "用户id") @RequestParam(value = "userId") String user_id,
+			@ApiParam(name = "doctorType", value = "type") @RequestParam(value = "doctorType") Integer doctor_type
+	){
+		CountResult countResult=consultService.getCount(user_id,doctor_type);
+		return ResultGenerator.genSuccessResult(countResult);
 	}
 
 	/**

@@ -18,7 +18,7 @@ public interface HzConsultDoctorMapper extends tkMapper<HzConsultDoctor> {
     int updateIsCollection(@Param("consult_id") Integer consultId, @Param("doctor_type") Integer doctorType,
                            @Param("collection") Integer collection);
     @Select({
-            "select * from hz_consult_doctor where consult_id=#{consult_id} and is_delete=0"
+            "select * from hz_consult_doctor where consult_id=#{consult_id} and is_delete=0 ORDER BY doctor_type ASC"
     })
     List<HzConsultDoctor> selectByConsultId(Integer consultId);
 }

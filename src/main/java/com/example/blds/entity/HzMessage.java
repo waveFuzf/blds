@@ -1,10 +1,15 @@
 package com.example.blds.entity;
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.example.blds.CustomJsonDateDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
+import javax.persistence.Id;
 import java.util.Date;
 @Data
 public class HzMessage {
+    @Id
     private String id;
 
     private String userName;

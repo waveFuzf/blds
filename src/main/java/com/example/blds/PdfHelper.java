@@ -1,9 +1,11 @@
 package com.example.blds;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Locale;
 
+import org.springframework.util.ResourceUtils;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import com.lowagie.text.DocumentException;
@@ -28,7 +30,7 @@ public class PdfHelper {
 
         ITextRenderer render = new ITextRenderer();
 
-        String path = getPath();
+        String path = getPath().replaceAll("%20"," ");
         //添加字体，以支持中文
         render.getFontResolver().addFont(path + "/arialuni.ttf", BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
         render.getFontResolver().addFont(path + "/simsun.ttc", BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
@@ -74,8 +76,8 @@ public class PdfHelper {
      * 获取类路径
      * @return
      */
-    public static String getPath(){
-        return PdfHelper.class.getResource("/").getPath().substring(1);
+    public static String getPath() throws FileNotFoundException {
+        return ResourceUtils.getFile("classpath:").getPath();
     }
 
 }

@@ -10,7 +10,6 @@ import com.example.blds.util.Enumeration;
 import com.example.blds.util.TokenUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -21,15 +20,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -325,10 +320,13 @@ public class BlInquiry {
 	@ApiOperation(value = "根据consultId查询寄件地址")
 	@PostMapping("/getAddressByConsultId.htm")
 	public Result getAddressByConsultId(
-			@ApiParam(name = "consultId", value = "加密的consultId") @RequestParam(value = "consultId") String consultId
-	) throws UnsupportedEncodingException {
-		HzConsultAddress consultAddress = consultAddressService.selectByConsultId(Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY));
-
+			@ApiParam(name = "consultId", value = "加密的consultId") @RequestParam(value = "consultId") String consultId,
+			@RequestParam("type")Integer type
+	) throws Exception {
+		HzConsultAddress consultAddress = consultAddressService.selectByConsultId( Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY),type);
+		consultAddress.setAddressId(Crypt.desEncrypt(String.valueOf(consultAddress.getId()),Enumeration.SECRET_KEY.ADDRESS_ID_KEY));
+		consultAddress.setConsultId(null);
+		consultAddress.setId(null);
 		return ResultGenerator.genSuccessResult(consultAddress);
 	}
 
@@ -362,16 +360,6 @@ public class BlInquiry {
         return new ResultBean<>(consultDoctor);
     }*/
 
-	@ApiOperation(value = "获取病例地址")
-	@PostMapping("/getConsultAddress.htm")
-	@UserTokenAop
-	public Result getConsultAddress(
-			@ApiParam(name = "consult_id", value = "病例id") @RequestParam(value = "consult_id", required = false) String consult_id
-	) {
-		Integer consultId = Crypt.desDecryptByInteger(consult_id, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
-		HzConsultAddress consultAddress = consultAddressService.selectByConsultId(consultId);
-		return ResultGenerator.genSuccessResult(consultAddress);
-	}
 
 	@UserTokenAop
 	@ApiOperation(value = "通过consult_id查找Consult")

@@ -6,11 +6,15 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 import javax.persistence.Id;
+import javax.persistence.Transient;
 import java.util.Date;
 @Data
 public class HzConsultAddress {
     @Id
     private Integer id;
+
+    @Transient
+    private String addressId;
 
     private Integer type;
 

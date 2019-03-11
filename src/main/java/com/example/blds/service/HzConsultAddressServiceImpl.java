@@ -23,9 +23,15 @@ public class HzConsultAddressServiceImpl implements HzConsultAddressService {
     }
 
     @Override
-    public HzConsultAddress selectByConsultId(Integer integer) {
+    public HzConsultAddress selectByConsultId(Integer consid, Integer integer) {
         Example example=new Example(HzConsultAddress.class);
-        example.createCriteria().andEqualTo("consultId",integer).andEqualTo("isDelete",0);
+        example.createCriteria().andEqualTo("consultId",consid).andEqualTo("isDelete",0)
+                .andEqualTo("type",integer);
         return consultAddressMapper.selectOneByExample(example);
+    }
+
+    @Override
+    public Integer editMailInfo(Integer integer, String mailCode, String mailCompany) {
+        return consultAddressMapper.updateMailInfo(integer,mailCode,mailCompany);
     }
 }

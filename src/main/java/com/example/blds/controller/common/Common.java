@@ -165,11 +165,11 @@ public class Common {
             hzDiagnose.setPdf(url+"pdf/"+uuid+".pdf");
             diagnoseService.updateByConsultIdSelective(hzDiagnose);
         }else {
-            hzSupplementReport.setReportPath(fileName);
+            hzSupplementReport.setReportPath(url+"pdf/"+uuid+".pdf");
             hzSupplementReportMapper.updateByPrimaryKeySelective(hzSupplementReport);
         }
 
-        return ResultGenerator.genSuccessResult(fileName);
+        return ResultGenerator.genSuccessResult(url+"pdf/"+uuid+".pdf");
     }
 
     public static void main(String[] args) throws Exception {

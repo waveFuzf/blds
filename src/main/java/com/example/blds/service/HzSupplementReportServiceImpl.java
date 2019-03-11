@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -115,7 +116,11 @@ public class HzSupplementReportServiceImpl implements HzSupplementReportService{
         Example example=new Example(HzSupplementReport.class);
         example.createCriteria().andEqualTo("consultId",consult_id).andEqualTo("isDelete",0);
         HzSupplementReport hzSupplementReport=SupplementReportMapper.selectOneByExample(example);
-        hzSupplementReport.setHzSlideList(slideMapper.selectByConsultId(consult_id,1));
+        List<HzSlide> slides=slideMapper.selectByConsultId(consult_id,1);
+        if (slides.size()!=0){
+            hzSupplementReport.setHzSlideList(slides);
+        }
+
         return hzSupplementReport;
     }
 

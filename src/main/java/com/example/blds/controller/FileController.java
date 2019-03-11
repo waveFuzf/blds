@@ -87,15 +87,17 @@ public class FileController {
         example.createCriteria().andEqualTo("type",type).andEqualTo("consultId",Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY));
         HzConsultAddress hzConsultAddress=hzConsultAddressMapper.selectOneByExample(example);
         String uuid=UUID.randomUUID().toString().replace("-","");
+        String filePath=null;
         try {
             File targetFile =new File(fileUrl+"\\express\\",uuid+".png");
             file.transferTo(targetFile);
-            hzConsultAddress.setMailPdf(url+"express/"+uuid+".png");
+            filePath=url+"express/"+uuid+".png";
+            hzConsultAddress.setMailPdf(filePath);
 
         }catch (Exception e){
             e.printStackTrace();
         }
-        return ResultGenerator.genSuccessResult(hzConsultAddressMapper.updateByPrimaryKey(hzConsultAddress));
+        return ResultGenerator.genSuccessResult(hzConsultAddressMapper.updateByPrimaryKey(hzConsultAddress)==1?filePath:null);
     }
 
 

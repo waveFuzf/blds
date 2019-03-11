@@ -353,7 +353,7 @@ public class BlDoctorController {
         hzConsultAddress.setIsDelete(0);
         Integer consid=Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
         hzConsultAddress.setConsultId(consid );
-        HzConsultAddress e=hzConsultAddressService.selectByConsultId( consid);
+        HzConsultAddress e=hzConsultAddressService.selectByConsultId( consid,1);
         if (e == null) {
             hzConsultAddress.setCreateTime(new Date());
             consultAddressMapper.insert(hzConsultAddress);
@@ -435,6 +435,24 @@ public class BlDoctorController {
             @ApiParam(name = "consult_id", value = "加密consult_id") @RequestParam(value = "consult_id") String consult_id) throws Exception {
         return ResultGenerator.genSuccessResult(supplementReportService.selectSuppleReport(Crypt.desDecryptByInteger(consult_id, Enumeration.SECRET_KEY.CONSULT_ID_KEY)));
     }
+
+    @ApiOperation(value = "添加邮寄信息")
+    @PostMapping("/editMailInfo.htm")
+    public Result editMailInfo(
+            @ApiParam(name = "address_id", value = "加密address_id") @RequestParam(value = "address_id") String address_id,
+            @ApiParam(name = "mailCode", value = "寄件编码") @RequestParam(value = "mailCode") String mailCode,
+    @ApiParam(name = "mailCompany", value = "快递公司") @RequestParam(value = "mailCompany") String mailCompany,
+            HttpServletRequest request) throws Exception {
+        String str=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (str.equals("token无效")){
+            return ResultGenerator.genFailResult("用户token无效");
+        }
+        JSONObject jsonObject=JSONObject.fromObject(str);
+        Integer i=hzConsultAddressService.editMailInfo(Crypt.desDecryptByInteger(address_id, Enumeration.SECRET_KEY.ADDRESS_ID_KEY),mailCode,mailCompany);
+        return ResultGenerator.genFailResult("保存成功！");
+    }
+
+
 
 
 }

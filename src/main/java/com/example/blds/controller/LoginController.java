@@ -2,6 +2,7 @@ package com.example.blds.controller;
 
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.entity.HzLoginInfo;
@@ -68,11 +69,13 @@ public class LoginController {
         hzUserService.changeStatusByUid("1",hzUser.getId());
         String userSession = JSON.toJSONString(hzUser);
         String redistoken=tokenUtil.createToken(userSession);
-        return ResultGenerator.genSuccessResult(redistoken);
+        return ResultGenerator.genSuccessResult(redistoken,hzUser.getIsSuper());
     }
     @PostMapping("logout")
     public String logOut(@ApiParam(value = "用户token", required = true) @RequestParam(value = "token") String token,
                          @ApiParam(value = "用户名", required = true) @RequestParam(value = "username") String username){
+        HzUser hzUser=JSON.parseObject(tokenUtil.checkToken(token),HzUser.class);
+        hzUserService.changeStatusByUid("0",hzUser.getUserId());
         tokenUtil.deleteToken(token);
         return "退出成功！";
     }

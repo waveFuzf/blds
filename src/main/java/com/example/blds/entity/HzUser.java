@@ -26,7 +26,7 @@ public class HzUser {
 
     private BigDecimal userScore;
 
-    private String userLevel;
+    private Integer isSuper;
 
     private Long departmentId;
 

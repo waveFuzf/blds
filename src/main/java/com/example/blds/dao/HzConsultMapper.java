@@ -39,8 +39,8 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
 
     List<HzConsult> getConsultList(@Param("consultDoctor") HzConsultDoctor consultDoctor);
     @Select({
-            "select SUM(case WHEN c.consult_status=6 THEN 1 ELSE 0 END) AS done, " +
-                    "SUM(case WHEN c.consult_status!=6 THEN 1 ELSE 0 END) AS undone from hz_consult c " +
+            "select IFNULL(SUM(case WHEN c.consult_status=6 THEN 1 ELSE 0 END),0) AS done, " +
+                    "IFNULL(SUM(case WHEN c.consult_status!=6 THEN 1 ELSE 0 END),0) AS undone from hz_consult c " +
                     "LEFT JOIN hz_consult_doctor cd ON c.id=cd.consult_id WHERE cd.doctor_type=#{type} " +
                     "AND cd.doctor_id=#{userId} "
     })

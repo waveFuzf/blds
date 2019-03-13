@@ -167,29 +167,26 @@ public class BlInquiry {
 	@ResponseBody
 	@UserTokenAop
 	public Result getConsultListToOperate(
-			@ApiParam(name = "caseTypeName", value = "[\'常规\',\'细胞\',\'冰冻\']") @RequestParam(value = "caseTypeName",
-					required = false) String caseTypeNameList,
-			@ApiParam(name = "nameOrParts", value = "患者姓名或部位") @RequestParam(value = "nameOrParts", required = false)
-					String nameOrParts,
-			@ApiParam(name = "type", value = "医院类型,0申请医院；1专家医院",example = "1") @RequestParam(value = "type",
-					required = false) Integer type,
-			@ApiParam(name = "isCancel", value = "取消",example = "1") @RequestParam(value = "isCancel",
-					required = false, defaultValue = "0") Integer isCancel,
-			@ApiParam(name = "hospitalId", value = "医院ID") @RequestParam(value = "hospitalId",
-					required = false) String hospitalId,
-			@ApiParam(name = "consultStatusList", value = "病例状态,1草稿；2待支付；3待收货；4待诊断；5已退回；6已诊断。60未审核 61审核通过（已诊断+审核通过） " +
-					"62表示审核不通过 63表示已结算") @RequestParam(value = "consultStatusList", required = false) String
-					consultStatusList,
-			@ApiParam(name = "commitStartTime", value = "开始时间 yyyy-MM-dd") @RequestParam(value = "commitStartTime",
-					required = false) String commitStartTime,
-			@ApiParam(name = "commitEndTime", value = "结束时间 yyyy-MM-dd") @RequestParam(value = "commitEndTime",
-					required = false) String commitEndTime,
-			@ApiParam(name = "pageSize", value = "页面大小", required = true,example = "1") @RequestParam(value = "pageSize", required = true,
-					defaultValue = "10") Integer pageSize,
-			@ApiParam(name = "pageNum", value = "页码数", required = true,example = "1") @RequestParam(value = "pageNum", required = true,
-					defaultValue = "1") Integer pageNum
-	) throws UnsupportedEncodingException {
-		return null;
+			@ApiParam(name = "hospitalId", value = "医院ID") @RequestParam(value = "hospitalId", required = false) String hospitalId,
+			@ApiParam(name = "statusType") @RequestParam(value = "statusType") String
+					statusType,
+			@ApiParam(name = "startTime") @RequestParam(value = "startTime",
+					required = false) String startTime,
+			@ApiParam(name = "endTime") @RequestParam(value = "endTime",
+					required = false) String endTime,
+			@ApiParam(name = "pageSize", value = "页面大小", required = true,example = "1") @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+			@ApiParam(name = "pageNum", value = "页码数", required = true,example = "1") @RequestParam(value = "pageNum",defaultValue = "1") Integer pageNum
+	) {
+		List<Integer> consultStatusList=null;
+		if (statusType.equals("1")){
+			consultStatusList=Arrays.asList(2,3,4,8,9);
+		}else if (statusType.equals("2")){
+			consultStatusList=Arrays.asList(6);
+		}else if (statusType.equals("3")){
+			consultStatusList=Arrays.asList(7);
+		}
+		List<HzConsult> consults=consultService.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime,pageSize,pageNum);
+		return ResultGenerator.genSuccessResult(consults);
 	}
 
 	/**
@@ -227,6 +224,7 @@ public class BlInquiry {
 			@ApiParam(name = "id", value = "加密consult_id") @RequestParam(value = "id") String id
 
 	) {
+
 		Integer consId = Crypt.desDecryptByInteger(id, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
 		Integer consult = consultService.updateIsDeleteByConsultId(consId);
 		return ResultGenerator.genSuccessResult(consult);

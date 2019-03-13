@@ -28,4 +28,6 @@ public interface HzConsultService {
     CountResult getCount(String user_id, Integer doctor_type);
 
     List<HzConsult> getConsultListByInfo(Integer userId, List<Integer> consultStatusList, Integer isCancel, Integer doctorType);
+
+    List<HzConsult> selectByFormInfo(String hospitalId, List<Integer> consultStatusList, String startTime, String endTime, Integer pageSize, Integer pageNum);
 }

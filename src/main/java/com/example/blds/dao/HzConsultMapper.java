@@ -6,7 +6,6 @@ import com.example.blds.entity.HzConsultDoctor;
 import com.example.blds.tkMapper;
 import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.JdbcType;
-import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
@@ -73,4 +72,27 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
             @Result(column = "id",property = "doctors" ,many = @Many(select = "com.example.blds.dao.HzConsultDoctorMapper.selectByConsultId"))
     })
     List<HzConsult> getConsultListByInfo(@Param("userId") Integer userId, @Param("consultStatus") List<Integer> consultStatusList, @Param("isCancel") Integer isCancel, @Param("doctorType") Integer doctorType);
+
+
+
+    @Select({"<script>",
+            "select c.* from hz_consult c LEFT JOIN hz_consult_doctor cd ON c.id=cd.consult_id ",
+            "<where>",
+            "<if test='consultStatusList != null'>",
+            "and c.consult_status in ",
+            "<foreach collection='consultStatusList' item='id' index='index' open='(' close=')' separator=','>",
+            "#{id}",
+            "</foreach>",
+            "</if>",
+            "<if test='hospitalId != null'>",
+            "and cd.hospital_id=#{hospitalId}",
+            "</if>",
+            "<if test='startTime != null and endTime !=null'>",
+            "and c.create_time between #{startTime} and #{endTime}",
+            "</if>",
+            "and cd.doctor_type=0",
+            "</where>",
+            "</script>"
+    })
+    List<HzConsult> selectByFormInfo(@Param("hospitalId") String hospitalId, @Param("consultStatusList") List<Integer> consultStatusList, @Param("startTime") String startTime, @Param("endTime") String endTime);
 }

@@ -6,7 +6,8 @@ import com.example.blds.entity.HzConsult;
 import com.example.blds.entity.HzConsultDoctor;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
-import org.apache.commons.lang.StringUtils;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
@@ -88,5 +89,12 @@ public class HzConsultServiceImpl implements HzConsultService {
     @Override
     public List<HzConsult> getConsultListByInfo(Integer userId, List<Integer> consultStatusList, Integer isCancel, Integer doctorType) {
         return hzConsultMapper.getConsultListByInfo(userId,consultStatusList,isCancel,doctorType);
+    }
+
+    @Override
+    public List<HzConsult> selectByFormInfo(String hospitalId, List<Integer> consultStatusList, String startTime, String endTime, Integer pageSize, Integer pageNum) {
+        Page<HzConsult> pageInfo = PageHelper.startPage(pageNum, pageSize);
+        List<HzConsult> lists=hzConsultMapper.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime);
+        return pageInfo;
     }
 }

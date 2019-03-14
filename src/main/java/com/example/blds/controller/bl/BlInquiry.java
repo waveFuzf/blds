@@ -186,7 +186,7 @@ public class BlInquiry {
 			consultStatusList=Arrays.asList(7);
 		}
 		List<HzConsult> consults=consultService.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime,pageSize,pageNum);
-		return ResultGenerator.genSuccessResult(consults);
+		return ResultGenerator.genSuccessResult(Crypt.desEncryptConsultList(consults,Enumeration.SECRET_KEY.CONSULT_ID_KEY));
 	}
 
 	/**

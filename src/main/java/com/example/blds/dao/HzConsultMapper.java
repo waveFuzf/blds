@@ -76,7 +76,7 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
 
 
     @Select({"<script>",
-            "select c.* from hz_consult c LEFT JOIN hz_consult_doctor cd ON c.id=cd.consult_id ",
+            "select c.*,c.id node from hz_consult c LEFT JOIN hz_consult_doctor cd ON c.id=cd.consult_id ",
             "<where>",
             "<if test='consultStatusList != null'>",
             "and c.consult_status in ",
@@ -84,15 +84,20 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
             "#{id}",
             "</foreach>",
             "</if>",
-            "<if test='hospitalId != null'>",
+            "<if test='hospitalId != null and hospitalId!=\"\"' >",
             "and cd.hospital_id=#{hospitalId}",
             "</if>",
-            "<if test='startTime != null and endTime !=null'>",
+            "<if test='startTime != null and endTime !=null and startTime!=\"\" and endTime!=\"\"'>",
             "and c.create_time between #{startTime} and #{endTime}",
             "</if>",
             "and cd.doctor_type=0",
             "</where>",
             "</script>"
+    })
+    @Results({
+            @Result(column = "id",property = "doctors" ,many = @Many(select = "com.example.blds.dao.HzConsultDoctorMapper.selectByConsultId")),
+            @Result(column = "node",property = "id",jdbcType = JdbcType.INTEGER),
+            @Result(column = "id",property = "consultPatient",one=@One(select = "com.example.blds.dao.ConsultPatientMapper.selectByConsultId")),
     })
     List<HzConsult> selectByFormInfo(@Param("hospitalId") String hospitalId, @Param("consultStatusList") List<Integer> consultStatusList, @Param("startTime") String startTime, @Param("endTime") String endTime);
 }

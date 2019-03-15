@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
@@ -329,23 +328,6 @@ public class BlInquiry {
 	}
 
 
-	/**
-	 * 查看快递单
-	 *
-	 * @param consultId
-	 * @throws UnsupportedEncodingException
-	 * @author liujingguang
-	 */
-	@ApiOperation(value = "根据consultId查询资料/快递单")
-	@PostMapping("/getExpressDeliveryByConsultId.htm")
-	public Result getExpressDeliveryByConsultId(
-			@ApiParam(name = "consultId", value = "加密的consultId") @RequestParam(value = "consultId") String consultId,
-			@ApiParam(name = "type", value = "查询类型 0.资料 1.快递单",example = "1") @RequestParam(value = "type") Integer type,
-			HttpSession session
-	) throws UnsupportedEncodingException {
-		List<HzFile> expressDelivery = fileService.getExpressDeliveryByConsultId(Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY), type);
-		return ResultGenerator.genSuccessResult(expressDelivery);
-	}
 
 
     /*@ApiOperation(value = "根据consult_id获取上级医生信息")

@@ -32,6 +32,7 @@ public class HzSlidesServiceImpl implements HzSlidesService {
         HzSlide hzSlide=new HzSlide();
         hzSlide.setConsultId(consultId);
         hzSlide.setType(type);
+        hzSlide.setIsDelete(0);
         for (UploadSlides u : uploadSlidesList){
             hzSlide.setUuid(u.getUuid());
             hzSlide.setClientSlidePath(u.getPath());

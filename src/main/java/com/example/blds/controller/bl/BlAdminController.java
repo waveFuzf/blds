@@ -3,8 +3,10 @@ package com.example.blds.controller.bl;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.aop.UserTokenAop;
+import com.example.blds.dao.HzSlideMapper;
 import com.example.blds.dao.HzSupplementReportMapper;
 import com.example.blds.entity.HzDiagnose;
+import com.example.blds.entity.HzSlide;
 import com.example.blds.entity.HzSupplementReport;
 import com.example.blds.entity.UploadSlides;
 import com.example.blds.service.HzConsultService;
@@ -20,10 +22,15 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import tk.mybatis.mapper.entity.Example;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 病理申请医生（下级医生）或者运营中心操作病历控制层
@@ -45,6 +52,9 @@ public class BlAdminController {
     private TokenUtil tokenUtil;
     @Autowired
     private HzSupplementReportMapper supplementReportMapper;
+
+    @Autowired
+    private HzSlideMapper slideMapper;
 
 
     @UserTokenAop
@@ -127,8 +137,31 @@ public class BlAdminController {
         hzSupplementReport.setCommitTime(new Date());
         hzSupplementReport.setIsCandle(hzDiagnose.getIsCandle());
         hzSupplementReport.setMaterialNum(hzDiagnose.getMaterialNum());
+        hzSupplementReport.setIsDelete(0);
         supplementReportMapper.insert(hzSupplementReport);
         return ResultGenerator.genSuccessResult("good job!");
+    }
+
+    @ApiOperation(value = "管理员查找切片")
+    @ResponseBody
+    @PostMapping("getSlidesByConsultId.htm")
+    public Result getSlidesByConsultId(
+            @ApiParam(name="consult_id", value="加密病例id")@RequestParam(value="consult_id") String consult_id,
+            HttpServletRequest request
+
+    ) throws Exception {
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
+        Example example=new Example(HzSlide.class);
+        example.createCriteria().andEqualTo("consultId",
+                Crypt.desDecrypt(consult_id,Enumeration.SECRET_KEY.CONSULT_ID_KEY)).andEqualTo("isDelete",0);
+        List<HzSlide> slides=slideMapper.selectByExample(example);
+        return ResultGenerator.genSuccessResult(slides);
     }
 
 }

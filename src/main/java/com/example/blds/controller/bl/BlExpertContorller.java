@@ -4,9 +4,11 @@ import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.aop.UserTokenAop;
 import com.example.blds.dao.DiagnoseInfo;
+import com.example.blds.dao.HzConsultDoctorMapper;
 import com.example.blds.dao.HzConsultMapper;
 import com.example.blds.dao.HzDiagnoseMapper;
 import com.example.blds.entity.HzConsult;
+import com.example.blds.entity.HzConsultDoctor;
 import com.example.blds.entity.HzDiagnose;
 import com.example.blds.entity.HzSlide;
 import com.example.blds.service.HzConsultService;
@@ -15,10 +17,11 @@ import com.example.blds.service.HzFileService;
 import com.example.blds.service.HzSlidesService;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
+import com.example.blds.util.TokenUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang.StringUtils;
+import net.sf.json.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Date;
 import java.util.List;
@@ -55,6 +59,12 @@ public class BlExpertContorller {
     private HzConsultMapper consultMapper;
     @Autowired
     private HzFileService fileService;
+
+    @Autowired
+    private HzConsultDoctorMapper consultDoctorMapper;
+
+    @Autowired
+    private TokenUtil tokenUtil;
 
 
     @ApiOperation(value = "根据slideUuid获取病例ID")
@@ -193,20 +203,54 @@ public class BlExpertContorller {
 
     @ApiOperation(value = "病例退回")
     @PostMapping("/consultReturnApply.htm")
-    @UserTokenAop
     @ResponseBody
     public Result consultReturnApply(
             @ApiParam(value = "加密的consultId") String consultId,
-            @ApiParam(value = "reason") String reason
+            @ApiParam(value = "reason") String reason,
+            HttpServletRequest request
     ) throws Exception {
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
         Integer consid = Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
-
-        HzConsult consult = new HzConsult();
-        consult.setId(consid);
+        List<HzConsultDoctor> lists=consultDoctorMapper.selectByConsultId(consid);
+        if (lists.get(1).getDoctorId()!=JSONObject.fromObject(res).optInt("userId")){
+            return ResultGenerator.genFailResult("休想,还想改别人的病理申请!");
+        }
+        HzConsult consult = consultMapper.selectByPrimaryKey(consid);
+        if (consult==null && consult.getConsultStatus()==6){
+            return ResultGenerator.genFailResult("病理状态不正确,请联系管理员!");
+        }
         consult.setReason(reason);
-        //状态修改为5 代表已退回 (1草稿 2待支付 3待收货 4待诊断 5已退回 6已诊断 7待安排)
-        consult.setConsultStatus(5);
+        consult.setConsultStatus(10);
+        int n=consultMapper.updateByPrimaryKeySelective(consult);
+        return n==1?ResultGenerator.genSuccessResult("成功!"):ResultGenerator.genFailResult("失败");
+    }
 
+    @ApiOperation(value = "病例取消")
+    @PostMapping("/consultCancelApply.htm")
+    @ResponseBody
+    public Result consultCancelApply(
+            @ApiParam(value = "加密的consultId") String consultId,
+            @ApiParam(value = "reason") String reason,
+            HttpServletRequest request
+    ) throws Exception {
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        Integer consid = Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+        List<HzConsultDoctor> lists=consultDoctorMapper.selectByConsultId(consid);
+        if (lists.get(0).getDoctorId()!=JSONObject.fromObject(res).optInt("userId")){
+            return ResultGenerator.genFailResult("休想,还想改别人的病理申请!");
+        }
+        HzConsult consult = consultMapper.selectByPrimaryKey(consid);
+        if (consult==null && consult.getConsultStatus()==4){
+            return ResultGenerator.genFailResult("病理状态不正确,请联系管理员!");
+        }
+        consult.setReasonCancel(reason);
+        consult.setConsultStatus(5);
         int n=consultMapper.updateByPrimaryKeySelective(consult);
         return n==1?ResultGenerator.genSuccessResult("成功!"):ResultGenerator.genFailResult("失败");
     }

@@ -1,9 +1,6 @@
 package com.example.blds.entity;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.example.blds.CustomJsonDateDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 import javax.persistence.GeneratedValue;
@@ -87,6 +84,8 @@ public class HzConsult {
     private String purpose;
 
     private List<HzSlide> hzSlides;
+
+    private Integer isSettlement;
 
     @Transient
     private String consult_id;

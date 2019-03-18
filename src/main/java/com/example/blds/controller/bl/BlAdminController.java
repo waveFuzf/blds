@@ -5,10 +5,7 @@ import com.example.blds.Re.ResultGenerator;
 import com.example.blds.aop.UserTokenAop;
 import com.example.blds.dao.HzSlideMapper;
 import com.example.blds.dao.HzSupplementReportMapper;
-import com.example.blds.entity.HzDiagnose;
-import com.example.blds.entity.HzSlide;
-import com.example.blds.entity.HzSupplementReport;
-import com.example.blds.entity.UploadSlides;
+import com.example.blds.entity.*;
 import com.example.blds.service.HzConsultService;
 import com.example.blds.service.HzDiagnoseService;
 import com.example.blds.service.HzSlidesService;
@@ -57,43 +54,54 @@ public class BlAdminController {
     private HzSlideMapper slideMapper;
 
 
-    @UserTokenAop
     @ApiOperation(value = "回退")
     @ResponseBody
     @PostMapping("backToUnDiagnose.htm")
     public Result backToUnDiagnose(
-            @ApiParam(name="consult_id", value="加密病例id")@RequestParam(value="consult_id") String consultId
+            @ApiParam(name="consult_id", value="加密病例id")@RequestParam(value="consult_id") String consultId,
+            @ApiParam(name="type", value="type")@RequestParam(value="type") boolean type,
+            HttpServletRequest request
     ){
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
         int i;
-        if(consultService.isConsultStatus(Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY),Enumeration.CONSULT_STATUS.WAIT_VERIFY,Enumeration.CONSULT_STATUS.RETURNED)){
-            i = consultService.updateCaseStatus(Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY),Enumeration.CONSULT_STATUS.UNDIAGNOSED);
+        if(consultService.isConsultStatus(Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY),10)){
+            i = consultService.updateCaseStatus(Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY),type?5:4);
         } else {
             return ResultGenerator.genFailResult("该状态不能改变");
         }
         return ResultGenerator.genSuccessResult(i==1?"该状态已改变":"该状态改变失败");
     }
 
-
-    @UserTokenAop
-    @ApiOperation(value = "修改会诊意见")
+    @ApiOperation(value = "结算")
     @ResponseBody
-    @PostMapping("updateDiagnosisByCaseId.htm")
-    public Result updateDiagnosis(
-            @ApiParam(name="consult_id", value="加密病例id")@RequestParam(value="consult_id") String consult_id,
-            @ApiParam(name="mirrorView", value="镜下所见")@RequestParam(value="mirrorView", required=false) String mirrorView,
-            @ApiParam(name="diagnose", value="专家意见")@RequestParam(value="diagnose", required=false) String diagnose,
-            @ApiParam(name="remark", value="备注")@RequestParam(value="remark", required=false, defaultValue="") String remark,
-            @ApiParam(name="slideEstimate", value="切片质量1.质量不合格2.质量基本合格3.质量合格4.质量优秀5.质量不合格(制片问题)6.质量不合格(设备问题)")@RequestParam(value="slideEstimate", required=false) Integer slideEstimate,
-            @ApiParam(name="diagnosisEstimate", value="初诊质量1.没有诊断2.诊断不正确3.诊断基本正确4.诊断完全正确5.诊断不明确")@RequestParam(value="diagnosisEstimate", required=false) Integer diagnosisEstimate
-    ){
-        HzDiagnose dia = new HzDiagnose();
-        dia.setConsultId(Crypt.desDecryptByInteger(consult_id,Enumeration.SECRET_KEY.CONSULT_ID_KEY));
-        dia.setMirrorView(mirrorView);
-        dia.setDiagnose(diagnose);
-        dia.setRemark(remark);
-        dia.setSlideEstimate(slideEstimate);
-        dia.setDiagnosisEstimate(diagnosisEstimate);
-        return ResultGenerator.genSuccessResult(diagnoseService.updateByConsultIdSelective(dia));
+    @PostMapping("isSettlement.htm")
+    public Result isSettlement(
+            @ApiParam(name="consult_id", value="加密病例id")@RequestParam(value="consult_id") String consultId,
+            @ApiParam(name="type", value="type")@RequestParam(value="type") boolean type,
+            HttpServletRequest request
+    ) throws Exception {
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
+        String consid=Crypt.desDecrypt(consultId,Enumeration.SECRET_KEY.CONSULT_ID_KEY);
+        if (!consultService.isConsultStatus(Integer.valueOf(consid),6)){
+            return ResultGenerator.genFailResult("该状态不能改变");
+        }
+        HzConsult hzConsult=new HzConsult();
+        hzConsult.setId(Integer.valueOf(consid));
+        hzConsult.setIsSettlement(type?1:0);
+        int i=consultService.updateByConsult(hzConsult);
+        return ResultGenerator.genSuccessResult(i==1?"该状态已改变":"该状态改变失败");
     }
 
     @UserTokenAop

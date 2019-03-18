@@ -7,11 +7,11 @@ import com.example.blds.service.HzConfigService;
 import com.example.blds.service.HzPriceServices;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
+import com.example.blds.util.TokenUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 @Api(tags = "价格管理  (价格列表、条件查询 添加价格 设置分成)")
@@ -34,20 +34,26 @@ public class BlPriceController {
     @Autowired
     HzConfigService configService;
 
+    @Autowired
+    private TokenUtil tokenUtil;
+
+    private static HashMap<Integer,String> hashMap=new HashMap<Integer, String>(){
+        {
+            put(301,"常规病理会诊");
+            put(302,"细胞病理会诊");
+            put(303,"术中冰冻会诊");
+            put(304,"补充检查");
+        }
+    };
 
     @ApiOperation(value = "价格列表、条件查询")
     @PostMapping("/selectPriceList.htm")
     @ResponseBody
     public Result selectPriceList(
-            @ApiParam(name="consultType", value="价格类型 (0病理 1.影像 2.门诊 3.会诊)") @RequestParam(value="consultType") Integer consultType,
-            @ApiParam(name="priceTypeId", value="价格分类 (分类id (301.常规 302.冰冻 303.细胞))") @RequestParam(value="priceTypeId") Integer priceTypeId,
-            @ApiParam(name="pageNum", value="页码数") @RequestParam(value="pageNum") Integer pageNum,
-            @ApiParam(name="pageSize", value="每页的大小") @RequestParam(value="pageSize") Integer pageSize,
-            HttpSession session
+            @ApiParam(name="priceTypeId", value="价格分类 (分类id (301.常规 302.冰冻 303.细胞))") @RequestParam(value="priceTypeId") Integer priceTypeId
     ) throws Exception {
 
-        PageHelper.startPage(pageNum, pageSize);
-        List<HzPriceConfig> priceList = priceServices.selectPriceListByType(consultType, priceTypeId);
+        List<HzPriceConfig> priceList = priceServices.selectPriceListByType(priceTypeId);
 
         priceList.forEach((e)->{
             try {
@@ -58,25 +64,19 @@ public class BlPriceController {
             }
         });
 
-        PageInfo<HzPriceConfig> pageInfo = new PageInfo<>(priceList, 5);
-
-        return ResultGenerator.genSuccessResult(pageInfo);
+        return ResultGenerator.genSuccessResult(priceList);
     }
 
     @ApiOperation(value = "添加价格")
     @PostMapping("/addPriceList.htm")
     @ResponseBody
     public Result addPriceList(HttpServletRequest request,
-                                            @ApiParam(name="unionId", value="医联体id", required=false) @RequestParam(value="unionId", required=false) Integer unionId,
-                                            @ApiParam(name="consultType", value="价格类型 (0病理 1.影像 2.门诊 3.会诊)") @RequestParam(value="consultType") Integer consultType,
                                             @ApiParam(name="priceTypeId", value="价格分类id (分类 (301.常规 302.冰冻 303.细胞))") @RequestParam(value="priceTypeId") Integer priceTypeId,
-                                            @ApiParam(name="priceTypeName", value="价格分类名称 (分类 (301.常规 302.冰冻 303.细胞))") @RequestParam(value="priceTypeName") String priceTypeName,
-                                            @ApiParam(name="positionId", value="职称id") @RequestParam(value="positionId") Integer positionId,
                                             @ApiParam(name="positionName", value="职称名称") @RequestParam(value="positionName") String positionName,
                                             @ApiParam(name="price", value="价格 (单位 分)") @RequestParam(value="price") Integer price
     ) throws Exception{
 
-        List<HzPriceConfig> isExist = priceServices.selectByPositionId(positionId, priceTypeId);
+        List<HzPriceConfig> isExist = priceServices.selectByPositionId(positionName, priceTypeId);
 
         if(isExist.size()>0){
             return ResultGenerator.genFailResult("该职称已设置价格");
@@ -84,13 +84,12 @@ public class BlPriceController {
 
         HzPriceConfig priceConfig = new HzPriceConfig();
         //设置默认优先级 优先级。越大越高。医联体默认100，医院默认200，科室300，医生500
-        priceConfig.setPriority(100);
         priceConfig.setPriceTypeId(priceTypeId);
-        priceConfig.setPriceTypeName(priceTypeName);
-        priceConfig.setPositionId(positionId);
+        priceConfig.setPriceTypeName(hashMap.get(priceTypeId));
         priceConfig.setPositionName(positionName);
         priceConfig.setPrice(price);
         priceConfig.setCreateTime(new Date());
+        priceConfig.setIsDelete(0);
 
         Integer insertno = priceServices.insertPriceConfig(priceConfig);
 
@@ -190,9 +189,16 @@ public class BlPriceController {
     @PostMapping("/deletePriceConfig.htm")
     @ResponseBody
     public Result deletePriceConfig(
-            @ApiParam(name="id", value="加密的价格id") @RequestParam(value="id") String id
+            @ApiParam(name="id", value="加密的价格id") @RequestParam(value="id") String id,
+            HttpServletRequest request
     ) throws Exception{
-
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
         Integer pid = Crypt.desDecryptByInteger(id, Enumeration.SECRET_KEY.PRICE_ID_KEY);
 
         Integer updateno = priceServices.deletePriceConfigById(pid);

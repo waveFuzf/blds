@@ -178,14 +178,14 @@ public class BlInquiry {
 	) {
 		List<Integer> consultStatusList=null;
 		if (statusType.equals("1")){
-			consultStatusList=Arrays.asList(2,3,4,8,9);
+			consultStatusList=Arrays.asList(2,3,4,8,9,10);
 		}else if (statusType.equals("2")){
 			consultStatusList=Arrays.asList(6);
 		}else if (statusType.equals("3")){
-			consultStatusList=Arrays.asList(7);
+			consultStatusList=Arrays.asList(7,5);
 		}
 		List<HzConsult> consults=consultService.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime,pageSize,pageNum);
-		return ResultGenerator.genSuccessResult(Crypt.desEncryptConsultList(consults,Enumeration.SECRET_KEY.CONSULT_ID_KEY));
+		return ResultGenerator.genSuccessResult(Crypt.desEncryptConsultList(consults,Enumeration.SECRET_KEY.CONSULT_ID_KEY),consults.size());
 	}
 
 	/**

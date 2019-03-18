@@ -13,16 +13,16 @@ public class HzPriceServiceImpl implements HzPriceServices {
     @Autowired
     private HzPriceConfigMapper priceConfigMapper;
     @Override
-    public List<HzPriceConfig> selectPriceListByType(Integer consultType, Integer priceTypeId) {
+    public List<HzPriceConfig> selectPriceListByType(Integer priceTypeId) {
         Example example=new Example(HzPriceConfig.class);
         example.createCriteria().andEqualTo("priceTypeId",priceTypeId).andEqualTo("isDelete",0);
         return priceConfigMapper.selectByExample(example);
     }
 
     @Override
-    public List<HzPriceConfig> selectByPositionId(Integer positionId, Integer priceTypeId) {
+    public List<HzPriceConfig> selectByPositionId(String positionId, Integer priceTypeId) {
         Example example=new Example(HzPriceConfig.class);
-        example.createCriteria().andEqualTo("priceTypeId",priceTypeId).andEqualTo("positionId",positionId).andEqualTo("isDelete",0);
+        example.createCriteria().andEqualTo("priceTypeId",priceTypeId).andEqualTo("positionName",positionId).andEqualTo("isDelete",0);
         return priceConfigMapper.selectByExample(example);
     }
 

@@ -3,10 +3,12 @@ package com.example.blds.dao;
 import com.example.blds.entity.CountResult;
 import com.example.blds.entity.HzConsult;
 import com.example.blds.entity.HzConsultDoctor;
+import com.example.blds.entity.QualityInfo;
 import com.example.blds.tkMapper;
 import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.JdbcType;
 
+import java.util.Date;
 import java.util.List;
 
 public interface HzConsultMapper extends tkMapper<HzConsult> {
@@ -100,4 +102,66 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
             @Result(column = "id",property = "consultPatient",one=@One(select = "com.example.blds.dao.ConsultPatientMapper.selectByConsultId")),
     })
     List<HzConsult> selectByFormInfo(@Param("hospitalId") String hospitalId, @Param("consultStatusList") List<Integer> consultStatusList, @Param("startTime") String startTime, @Param("endTime") String endTime);
+
+    @Select({
+            "<script>",
+            "select cd.hospital_name as name,",
+            "<if test='activeName==\"1\"'>",
+            "SUM(case when d.slide_estimate=1 then 1 else 0 end) as one, ",
+            "SUM(case when d.slide_estimate=2 then 1 else 0 end) as two, ",
+            "SUM(case when d.slide_estimate=3 then 1 else 0 end) as three, ",
+            "SUM(case when d.slide_estimate=4 then 1 else 0 end) as four,",
+            "COUNT(*) as count ",
+            "</if>",
+            "<if test='activeName==\"2\"'>",
+            "SUM(case when d.diagnosis_estimate=1 then 1 else 0 end) as one, ",
+            "SUM(case when d.diagnosis_estimate=2 then 1 else 0 end) as two, ",
+            "SUM(case when d.diagnosis_estimate=3 then 1 else 0 end) as three, ",
+            "SUM(case when d.diagnosis_estimate=4 then 1 else 0 end) as four, ",
+            "COUNT(*) as count ",
+            "</if>",
+            "from hz_consult c LEFT JOIN hz_diagnose d ON d.consult_id=c.id ",
+            " LEFT JOIN hz_consult_doctor cd ON cd.consult_id=c.id ",
+            "<where>  c.consult_status=6 and cd.doctor_type=0 ",
+            "<if test='startTime != null and endTime !=null and startTime!=\"\" and endTime!=\"\"'>",
+            "and c.create_time between #{startTime} and #{endTime} GROUP BY cd.hospital_name ",
+            "</if>",
+            "</where>",
+            "</script>"
+    })
+    List<QualityInfo> selectQualityInfoByHospital(@Param("startTime") String beginTime, @Param("endTime") String endTime, @Param("activeName") String activeName);
+
+    @Select({
+            "<script>",
+            "select c.subspeciality_name as name,",
+            "<if test='activeName==\"1\"'>",
+            "SUM(case when d.slide_estimate=1 then 1 else 0 end) as one, ",
+            "SUM(case when d.slide_estimate=2 then 1 else 0 end) as two, ",
+            "SUM(case when d.slide_estimate=3 then 1 else 0 end) as three, ",
+            "SUM(case when d.slide_estimate=4 then 1 else 0 end) as four， ",
+            "COUNT(*) as count ",
+            "</if>",
+            "<if test='activeName==\"2\"'>",
+            "SUM(case when d.diagnosis_estimate=1 then 1 else 0 end) as one, ",
+            "SUM(case when d.diagnosis_estimate=2 then 1 else 0 end) as two, ",
+            "SUM(case when d.diagnosis_estimate=3 then 1 else 0 end) as three, ",
+            "SUM(case when d.diagnosis_estimate=4 then 1 else 0 end) as four, ",
+            "COUNT(*) as count ",
+            "</if>",
+            "from hz_consult c LEFT JOIN hz_diagnose d ON d.consult_id=c.id ",
+            "<where> and c.consult_status=6 ",
+            "<if test='startTime != null and endTime !=null and startTime!=\"\" and endTime!=\"\"'>",
+            "and c.create_time between #{startTime} and #{endTime} GROUP BY c.subspeciality_name",
+            "</if>",
+            "</where>",
+            "</script>"
+    })
+    @Results({
+           @Result(column = "name",property = "name",jdbcType = JdbcType.VARCHAR),
+            @Result(column = "one",property = "one",jdbcType = JdbcType.INTEGER),
+            @Result(column = "two",property = "two",jdbcType = JdbcType.INTEGER),
+            @Result(column = "three",property = "three",jdbcType = JdbcType.INTEGER),
+            @Result(column = "four",property = "four",jdbcType = JdbcType.INTEGER),
+    })
+    List<QualityInfo> selectQualityInfoByParts(@Param("startTime") String beginTime, @Param("endTime") String endTime, @Param("activeName") String activeName);
 }

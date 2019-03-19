@@ -12,4 +12,5 @@ public interface HzEvaluateService {
 
     PageInfo<HzEvaluate> getExpertEvaluateList(Integer evaluateType,Long evaluatorId, Long evaluateeId,
                                                Integer pageNo, Integer pageSize);
+
 }

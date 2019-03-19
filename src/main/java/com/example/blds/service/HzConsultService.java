@@ -3,6 +3,7 @@ package com.example.blds.service;
 import com.example.blds.entity.CountResult;
 import com.example.blds.entity.HzConsult;
 import com.example.blds.entity.HzConsultDoctor;
+import com.example.blds.entity.QualityInfo;
 
 import java.util.List;
 
@@ -30,4 +31,6 @@ public interface HzConsultService {
     List<HzConsult> getConsultListByInfo(Integer userId, List<Integer> consultStatusList, Integer isCancel, Integer doctorType);
 
     List<HzConsult> selectByFormInfo(String hospitalId, List<Integer> consultStatusList, String startTime, String endTime, Integer pageSize, Integer pageNum);
+
+    List<QualityInfo> selectQualityInfo(String beginTime, String endTime, String activeName, String radio);
 }

@@ -4,6 +4,7 @@ import com.example.blds.dao.HzConsultMapper;
 import com.example.blds.entity.CountResult;
 import com.example.blds.entity.HzConsult;
 import com.example.blds.entity.HzConsultDoctor;
+import com.example.blds.entity.QualityInfo;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
 import com.github.pagehelper.Page;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -96,5 +98,16 @@ public class HzConsultServiceImpl implements HzConsultService {
         Page<HzConsult> pageInfo = PageHelper.startPage(pageNum, pageSize);
         List<HzConsult> lists=hzConsultMapper.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime);
         return pageInfo;
+    }
+
+    @Override
+    public List<QualityInfo> selectQualityInfo(String beginTime, String endTime, String activeName, String radio) {
+        List<QualityInfo> qualityInfos=new ArrayList<>();
+        if (radio.equals("1")){
+            qualityInfos=hzConsultMapper.selectQualityInfoByHospital(beginTime,endTime,activeName);
+        }else {
+            qualityInfos=hzConsultMapper.selectQualityInfoByParts(beginTime,endTime,activeName);
+        }
+        return qualityInfos;
     }
 }

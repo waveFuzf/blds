@@ -53,7 +53,6 @@ public class BlAdminController {
     @Autowired
     private HzSlideMapper slideMapper;
 
-
     @ApiOperation(value = "回退")
     @ResponseBody
     @PostMapping("backToUnDiagnose.htm")
@@ -149,6 +148,8 @@ public class BlAdminController {
         supplementReportMapper.insert(hzSupplementReport);
         return ResultGenerator.genSuccessResult("good job!");
     }
+
+
 
     @ApiOperation(value = "管理员查找切片")
     @ResponseBody

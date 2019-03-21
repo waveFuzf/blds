@@ -9,5 +9,5 @@ public interface HzLoginInfoService {
 
     boolean save(HzLoginInfo hzLoginInfo);
 
-    void createAdmin(HzHospital hzHospital);
+    Integer createAdmin(HzHospital hzHospital);
 }

@@ -218,8 +218,8 @@ public class BlAdminController {
         if (hzHospitalMapper.insert(hzHospital)==0){
             return ResultGenerator.genFailResult("插入失败");
         }else {
-            loginInfoService.createAdmin(hzHospital);
-            hzUserService.createAdmin();
+            Integer id=loginInfoService.createAdmin(hzHospital);
+            hzUserService.createAdmin(hzHospital,id);
         }
         return ResultGenerator.genSuccessResult();
     }
@@ -286,6 +286,18 @@ public class BlAdminController {
         return ResultGenerator.genSuccessResult("删除成功!");
     }
 
+    @PostMapping(value = "/test.htm")
+    public Result importUsersList(){
+        List<HzHospital> hzHospitals=hzHospitalService.getHospitalList("");
+        hzHospitals.forEach((e)->{
+            if (e.getAdmin()==null){
+                Integer id=loginInfoService.createAdmin(e);
+                hzUserService.createAdmin(e,id);
+            }
+        });
+        return null;
+    }
+
     @PostMapping(value = "/importUserList.htm")
     public Result importUsersList(
             @ApiParam(value = "file detail") @RequestPart("file") MultipartFile file,
@@ -340,5 +352,7 @@ public class BlAdminController {
         }
         return errorLists;
     }
+
+
 
 }

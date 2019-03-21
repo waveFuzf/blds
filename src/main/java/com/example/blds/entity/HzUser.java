@@ -1,13 +1,11 @@
 package com.example.blds.entity;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.example.blds.CustomJsonDateDeserializer;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 
+import javax.persistence.Transient;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;

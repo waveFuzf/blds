@@ -1,6 +1,7 @@
 package com.example.blds.service;
 
 import com.example.blds.dao.HzUserMapper;
+import com.example.blds.entity.HzHospital;
 import com.example.blds.entity.HzUser;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -61,5 +62,19 @@ public class HzUserServiceImpl implements HzUserService {
         Page<HzUser> pageInfo = PageHelper.startPage(pageNo, pageSize);
         List<HzUser> user=Objects.equals(name,null)?hzUserMapper.getExpertsInfoAndPrice(caseTypeId):hzUserMapper.getExpertsInfoAndPriceByTag("%"+name+"%",caseTypeId);
         return pageInfo;
+    }
+
+    @Override
+    public Integer createAdmin(HzHospital hzHospital, Integer id) {
+        HzUser hzUser=new HzUser();
+        hzUser.setName(hzHospital.getName()+"管理员");
+        hzUser.setUserId(Long.valueOf(id));
+        hzUser.setUserState(0);
+        hzUser.setIsSuper(1);
+        hzUser.setHospitalId(Long.valueOf(hzHospital.getHospitalId()));
+        hzUser.setHospitalName(hzHospital.getName());
+        hzUser.setIsDelete(0);
+        hzUserMapper.insert(hzUser);
+        return null;
     }
 }

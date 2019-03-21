@@ -4,6 +4,8 @@ import com.example.blds.dao.HzLoginInfoMapper;
 import com.example.blds.entity.HzHospital;
 import com.example.blds.entity.HzLoginInfo;
 import com.example.blds.util.ChineseCharacterUtil;
+import org.apache.shiro.crypto.hash.SimpleHash;
+import org.apache.shiro.util.ByteSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
@@ -34,11 +36,16 @@ public class HzLoginInfoServiceImpl implements HzLoginInfoService {
     }
 
     @Override
-    public void createAdmin(HzHospital hzHospital) {
+    public Integer createAdmin(HzHospital hzHospital) {
         HzLoginInfo hzLoginInfo=new HzLoginInfo();
         hzLoginInfo.setCreateTime(new Date());
         hzLoginInfo.setIsDelete(0);
-        hzLoginInfo.setLoginName(ChineseCharacterUtil.convertHanzi2Pinyin(hzHospital.getName(),false)+"_admin");
+        String hos=ChineseCharacterUtil.convertHanzi2Pinyin(hzHospital.getName(),false);
+        hzLoginInfo.setLoginName(hos+"_admin");
+        hzLoginInfo.setPassword(new SimpleHash("md5", "blds"+hos, ByteSource.Util.bytes(""),
+                2).toHex());
+        hzLoginInfoMapper.insert(hzLoginInfo);
+        return hzLoginInfo.getUid();
     }
 
 }

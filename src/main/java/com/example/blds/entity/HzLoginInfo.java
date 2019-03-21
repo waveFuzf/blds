@@ -1,15 +1,14 @@
 package com.example.blds.entity;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.example.blds.CustomJsonDateDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.util.Date;
 @Data
 public class HzLoginInfo {
     @Id
+    @GeneratedValue(generator = "JDBC")
     private Integer uid;
 
     private String loginName;

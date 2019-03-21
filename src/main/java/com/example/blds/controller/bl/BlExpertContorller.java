@@ -13,7 +13,6 @@ import com.example.blds.entity.HzDiagnose;
 import com.example.blds.entity.HzSlide;
 import com.example.blds.service.HzConsultService;
 import com.example.blds.service.HzDiagnoseService;
-import com.example.blds.service.HzFileService;
 import com.example.blds.service.HzSlidesService;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
@@ -57,8 +56,6 @@ public class BlExpertContorller {
     private HzDiagnoseMapper diagnoseMapper;
     @Autowired
     private HzConsultMapper consultMapper;
-    @Autowired
-    private HzFileService fileService;
 
     @Autowired
     private HzConsultDoctorMapper consultDoctorMapper;

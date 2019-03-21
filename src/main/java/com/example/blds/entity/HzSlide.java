@@ -15,8 +15,6 @@ public class HzSlide {
 
     private Integer type;
 
-    private String slideName;
-
     private String clientSlidePath;
 
     private Date createTime;

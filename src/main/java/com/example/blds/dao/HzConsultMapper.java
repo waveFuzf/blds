@@ -8,7 +8,6 @@ import com.example.blds.tkMapper;
 import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.JdbcType;
 
-import java.util.Date;
 import java.util.List;
 
 public interface HzConsultMapper extends tkMapper<HzConsult> {
@@ -92,6 +91,9 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
             "<if test='startTime != null and endTime !=null and startTime!=\"\" and endTime!=\"\"'>",
             "and c.create_time between #{startTime} and #{endTime}",
             "</if>",
+            "<if test='radio != 300 '>",
+            "and c.case_type_id = #{radio}",
+            "</if>",
             "and cd.doctor_type=0",
             "</where>",
             "</script>"
@@ -101,7 +103,7 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
             @Result(column = "node",property = "id",jdbcType = JdbcType.INTEGER),
             @Result(column = "id",property = "consultPatient",one=@One(select = "com.example.blds.dao.ConsultPatientMapper.selectByConsultId")),
     })
-    List<HzConsult> selectByFormInfo(@Param("hospitalId") String hospitalId, @Param("consultStatusList") List<Integer> consultStatusList, @Param("startTime") String startTime, @Param("endTime") String endTime);
+    List<HzConsult> selectByFormInfo(@Param("hospitalId") String hospitalId, @Param("consultStatusList") List<Integer> consultStatusList, @Param("startTime") String startTime, @Param("endTime") String endTime, @Param("radio") Integer radio);
 
     @Select({
             "<script>",
@@ -138,14 +140,14 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
             "SUM(case when d.slide_estimate=1 then 1 else 0 end) as one, ",
             "SUM(case when d.slide_estimate=2 then 1 else 0 end) as two, ",
             "SUM(case when d.slide_estimate=3 then 1 else 0 end) as three, ",
-            "SUM(case when d.slide_estimate=4 then 1 else 0 end) as four， ",
+            "SUM(case when d.slide_estimate=4 then 1 else 0 end) as four, ",
             "COUNT(*) as count ",
             "</if>",
             "<if test='activeName==\"2\"'>",
             "SUM(case when d.diagnosis_estimate=1 then 1 else 0 end) as one, ",
             "SUM(case when d.diagnosis_estimate=2 then 1 else 0 end) as two, ",
             "SUM(case when d.diagnosis_estimate=3 then 1 else 0 end) as three, ",
-            "SUM(case when d.diagnosis_estimate=4 then 1 else 0 end) as four, ",
+            "SUM(case when d.diagnosis_estimate=4 then 1 else 0 end) as four,",
             "COUNT(*) as count ",
             "</if>",
             "from hz_consult c LEFT JOIN hz_diagnose d ON d.consult_id=c.id ",

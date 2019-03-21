@@ -1,9 +1,7 @@
 package com.example.blds.service;
 
 import com.example.blds.dao.HzConsultDoctorMapper;
-import com.example.blds.entity.HzConsult;
 import com.example.blds.entity.HzConsultDoctor;
-import com.example.blds.entity.HzDoctor;
 import com.example.blds.entity.HzUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

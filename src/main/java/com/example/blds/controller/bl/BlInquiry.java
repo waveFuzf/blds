@@ -52,8 +52,6 @@ public class BlInquiry {
 	@Autowired
 	private HzConsultAddressService consultAddressService;
 
-	@Autowired
-	private HzFileService fileService;
 
 	@Autowired
 	private HzConsultDoctorService consultDoctorService;
@@ -169,12 +167,14 @@ public class BlInquiry {
 			@ApiParam(name = "hospitalId", value = "医院ID") @RequestParam(value = "hospitalId", required = false) String hospitalId,
 			@ApiParam(name = "statusType") @RequestParam(value = "statusType") String
 					statusType,
-			@ApiParam(name = "startTime") @RequestParam(value = "startTime",
+			@ApiParam(name = "startTime") @RequestParam(value = "beginTime",
 					required = false) String startTime,
 			@ApiParam(name = "endTime") @RequestParam(value = "endTime",
 					required = false) String endTime,
 			@ApiParam(name = "pageSize", value = "页面大小", required = true,example = "1") @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
-			@ApiParam(name = "pageNum", value = "页码数", required = true,example = "1") @RequestParam(value = "pageNum",defaultValue = "1") Integer pageNum
+			@ApiParam(name = "pageNum", value = "页码数", required = true,example = "1") @RequestParam(value = "pageNum",defaultValue = "1") Integer pageNum,
+			@ApiParam(name = "radio") @RequestParam(value = "radio") Integer
+					radio
 	) {
 		List<Integer> consultStatusList=null;
 		if (statusType.equals("1")){
@@ -184,7 +184,7 @@ public class BlInquiry {
 		}else if (statusType.equals("3")){
 			consultStatusList=Arrays.asList(7,5);
 		}
-		List<HzConsult> consults=consultService.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime,pageSize,pageNum);
+		List<HzConsult> consults=consultService.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime,pageSize,pageNum,radio);
 		return ResultGenerator.genSuccessResult(Crypt.desEncryptConsultList(consults,Enumeration.SECRET_KEY.CONSULT_ID_KEY),consults.size());
 	}
 

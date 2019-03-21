@@ -3,12 +3,11 @@ package com.example.blds.controller.bl;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.aop.UserTokenAop;
+import com.example.blds.dao.HzHospitalMapper;
 import com.example.blds.dao.HzSlideMapper;
 import com.example.blds.dao.HzSupplementReportMapper;
 import com.example.blds.entity.*;
-import com.example.blds.service.HzConsultService;
-import com.example.blds.service.HzDiagnoseService;
-import com.example.blds.service.HzSlidesService;
+import com.example.blds.service.*;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
 import com.example.blds.util.TokenUtil;
@@ -17,22 +16,26 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import tk.mybatis.mapper.entity.Example;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * 病理申请医生（下级医生）或者运营中心操作病历控制层
- */
-@Api(tags = "【管理员】【操作病例】")
+@Api(tags = "【管理员】")
 @RequestMapping("/bladmin")
 @Controller
 public class BlAdminController {
@@ -49,9 +52,20 @@ public class BlAdminController {
     private TokenUtil tokenUtil;
     @Autowired
     private HzSupplementReportMapper supplementReportMapper;
+    @Autowired
+    private HzHospitalService hzHospitalService;
 
     @Autowired
     private HzSlideMapper slideMapper;
+
+    @Autowired
+    private HzHospitalMapper hzHospitalMapper;
+
+    @Autowired
+    private HzLoginInfoService loginInfoService;
+
+    @Autowired
+    private HzUserService hzUserService;
 
     @ApiOperation(value = "回退")
     @ResponseBody
@@ -109,8 +123,16 @@ public class BlAdminController {
     @PostMapping("cancelToggle.htm")
     public Result cancelToggle(
             @ApiParam(name="consult_id", value="加密病例id")@RequestParam(value="consult_id") String consult_id,
-            @ApiParam(name="isCancel", value="是否取消会诊，1取消，0恢复")@RequestParam(value="isCancel") Integer isCancel
+            @ApiParam(name="isCancel", value="是否取消会诊，1取消，0恢复")@RequestParam(value="isCancel") Integer isCancel,
+            HttpServletRequest request
     ){
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
         Integer i = consultService.cancelToggle(Crypt.desDecryptByInteger(consult_id,Enumeration.SECRET_KEY.CONSULT_ID_KEY),isCancel);
         return ResultGenerator.genSuccessResult(i);
     }
@@ -171,6 +193,152 @@ public class BlAdminController {
                 Crypt.desDecrypt(consult_id,Enumeration.SECRET_KEY.CONSULT_ID_KEY)).andEqualTo("isDelete",0);
         List<HzSlide> slides=slideMapper.selectByExample(example);
         return ResultGenerator.genSuccessResult(slides);
+    }
+
+    @ApiOperation(value = "管理员新增医院")
+    @ResponseBody
+    @PostMapping("saveHospital.htm")
+    public Result saveHospital(
+            @RequestBody  HzHospital hzHospital,
+            HttpServletRequest request
+
+    ){
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
+        hzHospital.setIsDelete(0);
+        if (hzHospitalMapper.select(hzHospital).size()>0){
+            return ResultGenerator.genFailResult("重复数据.");
+        }
+        hzHospital.setCreateTime(new Date());
+        if (hzHospitalMapper.insert(hzHospital)==0){
+            return ResultGenerator.genFailResult("插入失败");
+        }else {
+            loginInfoService.createAdmin(hzHospital);
+            hzUserService.createAdmin();
+        }
+        return ResultGenerator.genSuccessResult();
+    }
+
+    @ApiOperation(value = "管理员更新医院")
+    @ResponseBody
+    @PostMapping("updateHospital.htm")
+    public Result updateHospital(
+            @RequestBody  HzHospital hzHospital,
+            HttpServletRequest request
+
+    ){
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
+        return ResultGenerator.genSuccessResult(hzHospitalMapper.updateByPrimaryKeySelective(hzHospital));
+    }
+
+
+    @ApiOperation(value = "管理员查询医院")
+    @ResponseBody
+    @PostMapping("getHospitals.htm")
+    public Result getHospitals(
+            @RequestParam(required = false) String hospitalName,
+            HttpServletRequest request
+
+    ){
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
+        List<HzHospital> hzHospitals=hzHospitalService.getHospitalList(hospitalName);
+        return ResultGenerator.genSuccessResult(hzHospitals);
+    }
+
+    @ApiOperation(value = "管理员删除医院")
+    @ResponseBody
+    @PostMapping("deleteHospital.htm")
+    public Result deleteHospital(
+            @RequestParam Integer hospitalId,
+            HttpServletRequest request
+
+    ){
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
+        HzHospital hzHospital=hzHospitalService.getByHospitalId(hospitalId);
+        if (hzHospital==null){
+            return ResultGenerator.genFailResult("医院不存在!");
+        }
+        hzHospital.setIsDelete(1);
+        hzHospitalMapper.updateByPrimaryKeySelective(hzHospital);
+        return ResultGenerator.genSuccessResult("删除成功!");
+    }
+
+    @PostMapping(value = "/importUserList.htm")
+    public Result importUsersList(
+            @ApiParam(value = "file detail") @RequestPart("file") MultipartFile file,
+            HttpServletRequest request, HttpServletResponse response){
+        try {
+            String login_name=tokenUtil.checkToken(request.getCookies()[1].getValue());
+            if (login_name.equals("token无效")){
+                return ResultGenerator.genFailResult(login_name);
+            }
+            JSONObject jsonObject=JSONObject.fromObject(login_name);
+            if (jsonObject.optString("isSuper").equals("0")){
+                return ResultGenerator.genFailResult("权限不足");
+            }
+            if (file != null) {
+                String fileName = file.getOriginalFilename();
+                BufferedInputStream bufferedInputStream = new BufferedInputStream(file.getInputStream());
+                String sufix = fileName.substring(fileName.lastIndexOf(".") + 1);
+                Workbook workbook = null;
+                if (sufix.equals("xlsx")) {
+                    workbook = new XSSFWorkbook(bufferedInputStream);
+                } else if (sufix.equals("xls")) {
+                    workbook = new HSSFWorkbook(bufferedInputStream);
+                }
+                if (workbook != null) {
+                    List errorLists=getUsersFromFile(workbook);
+                    bufferedInputStream.close();
+                    if (errorLists.size()>0)
+                        return ResultGenerator.genFailResult(errorLists);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResultGenerator.genSuccessResult("导入成功！");
+
+    }
+
+        private List getUsersFromFile(Workbook workbook) {
+        List errorLists=new ArrayList();
+        Sheet sheet = workbook.getSheetAt(0);
+        DecimalFormat decimalFormat=new DecimalFormat("#");
+        Row row;
+        for (int j = 1; j < sheet.getPhysicalNumberOfRows(); j++) {
+            row = sheet.getRow(j);
+//            loginInfoService.getByUsername();
+//            HzUser checkuser=hzUserService.getByUsername((login_name.substring(0, login_name.indexOf('.'))));
+//            if (checkuser!=null){
+//                errorLists.add(j);
+//                continue;
+//            }
+
+        }
+        return errorLists;
     }
 
 }

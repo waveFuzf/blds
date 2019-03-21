@@ -1,8 +1,5 @@
 package com.example.blds.entity;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.example.blds.CustomJsonDateDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 import javax.persistence.Id;
@@ -13,15 +10,9 @@ public class HzPriceConfig {
     @Id
     private Integer id;
 
-    private Integer unionId;
-
-    private Integer priority;
-
     private Integer priceTypeId;
 
     private String priceTypeName;
-
-    private Integer positionId;
 
     private String positionName;
 

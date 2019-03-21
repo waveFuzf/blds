@@ -47,8 +47,6 @@ public class HzConsult {
 
     private String parts;
 
-    private Integer unionId;
-
     private Integer price;
 
     private Integer supplementPrice;

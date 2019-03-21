@@ -157,43 +157,7 @@ public class UserController {
 //            LOG.info("========mady========");
 //        }
 //    }
-//    @PostMapping(value = "/importUserList")
-//    public Result importUsersList(
-//            @RequestParam(value = "token", required = true) String token,
-//            @ApiParam(value = "file detail") @RequestPart("file") MultipartFile file,
-//            HttpServletRequest request, HttpServletResponse response){
-//        try {
-//            String login_name=tokenUtil.checkToken(token);
-//            if (login_name.equals("token无效")){
-//                return ResultGenerator.genFailResult(login_name);
-//            }
-//            JSONObject jsonObject=JSONObject.fromObject(login_name);
-//            if (jsonObject.optString("isSuper").equals("0")){
-//                return ResultGenerator.genFailResult("权限不足");
-//            }
-//            if (file != null) {
-//                String fileName = file.getOriginalFilename();
-//                BufferedInputStream bufferedInputStream = new BufferedInputStream(file.getInputStream());
-//                String sufix = fileName.substring(fileName.lastIndexOf(".") + 1);
-//                Workbook workbook = null;
-//                if (sufix.equals("xlsx")) {
-//                    workbook = new XSSFWorkbook(bufferedInputStream);
-//                } else if (sufix.equals("xls")) {
-//                    workbook = new HSSFWorkbook(bufferedInputStream);
-//                }
-//                if (workbook != null) {
-//                    List errorLists=getUsersFromFile(workbook);
-//                    bufferedInputStream.close();
-//                    if (errorLists.size()>0)
-//                        return ResultGenerator.genFailResult(errorLists);
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return ResultGenerator.genSuccessResult("导入成功！");
-//
-//    }
+
 
     @PostMapping("/getMyInfo")
     @ResponseBody
@@ -241,34 +205,5 @@ public class UserController {
 
 
 
-//    private List getUsersFromFile(Workbook workbook) {
-//        List errorLists=new ArrayList();
-//        Sheet sheet = workbook.getSheetAt(0);
-//        DecimalFormat decimalFormat=new DecimalFormat("#");
-//        Row row;
-//        for (int j = 1; j < sheet.getPhysicalNumberOfRows(); j++) {
-//            row = sheet.getRow(j);
-//            User user=new User();
-//            String login_name= String.valueOf(row.getCell(0));
-//            User checkuser=userService.getByUsername((login_name.substring(0, login_name.indexOf('.'))));
-//            if (checkuser!=null){
-//                errorLists.add(j);
-//                continue;
-//            }
-//            user.setLoginName((login_name.substring(0, login_name.indexOf('.'))));
-//            user.setRealName(String.valueOf(row.getCell(1)));
-//            user.setPhone(decimalFormat.format(row.getCell(2).getNumericCellValue()));
-//            user.setEmail(String.valueOf(row.getCell(3)));
-//            String deptId= String.valueOf(row.getCell(4));
-//            user.setDeptId(Integer.valueOf(deptId.substring(0, deptId.indexOf('.'))));
-//            user.setPassword(password);
-//            user.setPosition(String.valueOf(row.getCell(5)));
-//            user.setIsSuper("0");
-//            user.setCreateTime(new Date());
-//            user.setIsDelete("0");
-//            user.setStatus("0");
-//            userService.save(user);
-//        }
-//        return errorLists;
-//    }
+
 }

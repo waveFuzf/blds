@@ -8,6 +8,10 @@ import java.util.List;
 
 public interface HzUserMapper extends tkMapper<HzUser> {
     @Select({
+            "select u.* from hz_user u where u.is_super=1 and u.hospital_id =#{hid} "
+    })
+    HzUser getAdminByhid(@Param("hid")Integer hid);
+    @Select({
             "select hz_user.* from hz_user where user_id = #{uid}"
     })
     HzUser getUserInfoByUid(Integer uid);

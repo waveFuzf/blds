@@ -94,9 +94,9 @@ public class HzConsultServiceImpl implements HzConsultService {
     }
 
     @Override
-    public List<HzConsult> selectByFormInfo(String hospitalId, List<Integer> consultStatusList, String startTime, String endTime, Integer pageSize, Integer pageNum) {
+    public List<HzConsult> selectByFormInfo(String hospitalId, List<Integer> consultStatusList, String startTime, String endTime, Integer pageSize, Integer pageNum, Integer radio) {
         Page<HzConsult> pageInfo = PageHelper.startPage(pageNum, pageSize);
-        List<HzConsult> lists=hzConsultMapper.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime);
+        List<HzConsult> lists=hzConsultMapper.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime,radio);
         return pageInfo;
     }
 

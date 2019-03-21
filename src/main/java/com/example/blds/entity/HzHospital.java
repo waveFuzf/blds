@@ -5,14 +5,14 @@ import com.example.blds.CustomJsonDateDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.util.Date;
 @Data
 public class HzHospital {
     @Id
+    @GeneratedValue(generator = "JDBC")
     private Integer id;
-
-    private Integer unionId;
 
     private Integer hospitalId;
 
@@ -24,13 +24,7 @@ public class HzHospital {
 
     private String footLogo;
 
-    private String appCode;
-
-    private String gzhCode;
-
-    private String fwhCode;
-
-    private String fwcCode;
+    private HzUser admin;
 
     private Integer isDelete;
     @JSONField(format = "YYYY-MM-dd HH:mm:ss")

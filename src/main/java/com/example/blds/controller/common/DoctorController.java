@@ -2,13 +2,9 @@ package com.example.blds.controller.common;
 
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
-import com.example.blds.entity.HzDoctor;
 import com.example.blds.entity.HzEvaluate;
-import com.example.blds.service.HzDoctorService;
 import com.example.blds.service.HzEvaluateService;
 import com.example.blds.util.Enumeration;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -21,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
-
 @Api(tags = "【公共】【专家】")
 @RequestMapping("/Doctor")
 @Controller
@@ -30,17 +24,7 @@ public class DoctorController {
 
     @Autowired
     private HzEvaluateService evaluateService;
-    @Autowired
-    private HzDoctorService hzDoctorService;
 
-    @ApiOperation("获取专家信息")
-    @PostMapping("/getExpertDoctorList.htm")
-    @ResponseBody
-    public Result getExpertDoctorList(){
-        Page<HzDoctor> pageInfo = PageHelper.startPage(1, 8);
-        List<HzDoctor> doctors = hzDoctorService.getExpertDoctorList();
-        return ResultGenerator.genSuccessResult(pageInfo);
-    }
 
 
     @ApiOperation("【获取专家的评价列表】")

@@ -12,8 +12,6 @@ public class HzEvaluate {
 
     private Integer consultId;
 
-    private Integer consultType;
-
     private Integer evaluateType;
 
     private Long evaluatorId;

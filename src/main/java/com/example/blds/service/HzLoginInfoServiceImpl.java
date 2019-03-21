@@ -1,7 +1,9 @@
 package com.example.blds.service;
 
 import com.example.blds.dao.HzLoginInfoMapper;
+import com.example.blds.entity.HzHospital;
 import com.example.blds.entity.HzLoginInfo;
+import com.example.blds.util.ChineseCharacterUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tk.mybatis.mapper.entity.Example;
@@ -29,6 +31,14 @@ public class HzLoginInfoServiceImpl implements HzLoginInfoService {
         user.setIsDelete(0);
         hzLoginInfoMapper.insert(user);
         return true;
+    }
+
+    @Override
+    public void createAdmin(HzHospital hzHospital) {
+        HzLoginInfo hzLoginInfo=new HzLoginInfo();
+        hzLoginInfo.setCreateTime(new Date());
+        hzLoginInfo.setIsDelete(0);
+        hzLoginInfo.setLoginName(ChineseCharacterUtil.convertHanzi2Pinyin(hzHospital.getName(),false)+"_admin");
     }
 
 }

@@ -2,7 +2,6 @@ package com.example.blds.controller;
 
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.entity.HzLoginInfo;
@@ -18,15 +17,12 @@ import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ByteSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.FileNotFoundException;
 
 @CrossOrigin
 @RestController
@@ -46,6 +42,7 @@ public class LoginController {
             hzLoginInfoService.save(new HzLoginInfo(username,
                     new SimpleHash("md5", password, ByteSource.Util.bytes(""),
                             2).toHex()));
+
             return ResultGenerator.genSuccessResult("注册成功.");
         }
         return ResultGenerator.genFailResult("注册失败.账号已存在。");

@@ -32,6 +32,8 @@ public class Enumeration {
          * 价格
          */
         public static final String PRICE_ID_KEY = "priceucmedljg8880715erqaqaqawardf";
+
+        public static final String HOSPITAL_ID_KEY = "hospitalucmedljg8880715erqaqaqawardf";
     }
 
     /**

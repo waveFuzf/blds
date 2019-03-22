@@ -16,5 +16,7 @@ public interface HzUserService {
 
     List<HzUser> getExpertsInfoByName(String name, Integer pageSize, Integer pageNo, Integer caseTypeId);
 
-    Integer createAdmin(HzHospital hzHospital, Integer id);
+    Integer createAdmin(HzHospital hzHospital);
+
+    HzUser getByUsername(String username);
 }

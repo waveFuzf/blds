@@ -16,7 +16,9 @@ public class HzUser {
     @JSONField(serialize=false)
     private Long id;
 
-    private Long userId;
+    private String loginName;
+
+    private String password;
 
     private String name;
 

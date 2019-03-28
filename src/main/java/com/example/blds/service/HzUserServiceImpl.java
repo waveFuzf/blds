@@ -7,6 +7,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tk.mybatis.mapper.entity.Example;
 
 import java.util.List;
 import java.util.Objects;
@@ -65,10 +66,10 @@ public class HzUserServiceImpl implements HzUserService {
     }
 
     @Override
-    public Integer createAdmin(HzHospital hzHospital, Integer id) {
+    public Integer createAdmin(HzHospital hzHospital,Integer id) {
         HzUser hzUser=new HzUser();
+        hzUser.setId(Long.valueOf(id));
         hzUser.setName(hzHospital.getName()+"管理员");
-        hzUser.setUserId(Long.valueOf(id));
         hzUser.setUserState(0);
         hzUser.setIsSuper(1);
         hzUser.setHospitalId(Long.valueOf(hzHospital.getHospitalId()));
@@ -76,5 +77,12 @@ public class HzUserServiceImpl implements HzUserService {
         hzUser.setIsDelete(0);
         hzUserMapper.insert(hzUser);
         return null;
+    }
+
+    @Override
+    public HzUser getByUsername(String username) {
+        Example example=new Example(HzUser.class);
+        example.createCriteria().andEqualTo("isDelete","0").andEqualTo("loginName",username);
+        return hzUserMapper.selectOneByExample(example);
     }
 }

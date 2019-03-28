@@ -1,6 +1,6 @@
 package com.example.blds.config;
 
-import com.example.blds.service.HzLoginInfoService;
+import com.example.blds.service.HzUserService;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -14,7 +14,7 @@ import javax.annotation.Resource;
 
 public class MyShiroRealm extends AuthorizingRealm {
     @Resource
-    public HzLoginInfoService hzLoginInfoService;
+    public HzUserService hzUserService;
 
     /**
      * 授权
@@ -33,7 +33,7 @@ public class MyShiroRealm extends AuthorizingRealm {
         //获取用户账号
         AuthenticationInfo authenticationInfo;
         String username = token.getPrincipal().toString();
-        String password = hzLoginInfoService.getByUsername(username).getPassword();
+        String password = hzUserService.getByUsername(username).getPassword();
         if (password!=null) {
              authenticationInfo= new SimpleAuthenticationInfo(
                     username,

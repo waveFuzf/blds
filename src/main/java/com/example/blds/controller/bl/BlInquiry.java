@@ -23,8 +23,10 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * 病理所有查询接口
@@ -162,20 +164,28 @@ public class BlInquiry {
 	@ApiOperation(value = "运营获取病例列表")
 	@PostMapping("/adminGetConsultList.htm")
 	@ResponseBody
-	@UserTokenAop
 	public Result getConsultListToOperate(
-			@ApiParam(name = "hospitalId", value = "医院ID") @RequestParam(value = "hospitalId", required = false) String hospitalId,
 			@ApiParam(name = "statusType") @RequestParam(value = "statusType") String
 					statusType,
-			@ApiParam(name = "startTime") @RequestParam(value = "beginTime",
+			@ApiParam(name = "startTime") @RequestParam(value = "startTime",
 					required = false) String startTime,
 			@ApiParam(name = "endTime") @RequestParam(value = "endTime",
 					required = false) String endTime,
 			@ApiParam(name = "pageSize", value = "页面大小", required = true,example = "1") @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
 			@ApiParam(name = "pageNum", value = "页码数", required = true,example = "1") @RequestParam(value = "pageNum",defaultValue = "1") Integer pageNum,
 			@ApiParam(name = "radio") @RequestParam(value = "radio") Integer
-					radio
+					radio,
+			HttpServletRequest request
 	) {
+		String token=request.getCookies()[1].getValue();
+		String res=tokenUtil.checkToken(token);
+		if (res.equals("token无效")){
+			return ResultGenerator.genFailResult(res);
+		}
+		JSONObject object=JSONObject.fromObject(res);
+		if (object.optString("isSuper").equals("0")){
+			return ResultGenerator.genFailResult("权限不够");
+		}
 		List<Integer> consultStatusList=null;
 		if (statusType.equals("1")){
 			consultStatusList=Arrays.asList(2,3,4,8,9,10);
@@ -184,7 +194,7 @@ public class BlInquiry {
 		}else if (statusType.equals("3")){
 			consultStatusList=Arrays.asList(7,5);
 		}
-		List<HzConsult> consults=consultService.selectByFormInfo(hospitalId,consultStatusList,startTime,endTime,pageSize,pageNum,radio);
+		List<HzConsult> consults=consultService.selectByFormInfo(object.optString("hospitalId"),consultStatusList,startTime,endTime,pageSize,pageNum,radio);
 		return ResultGenerator.genSuccessResult(Crypt.desEncryptConsultList(consults,Enumeration.SECRET_KEY.CONSULT_ID_KEY),consults.size());
 	}
 

@@ -6,8 +6,10 @@ import com.example.blds.aop.UserTokenAop;
 import com.example.blds.dao.HzHospitalMapper;
 import com.example.blds.dao.HzSlideMapper;
 import com.example.blds.dao.HzSupplementReportMapper;
+import com.example.blds.dao.HzUserMapper;
 import com.example.blds.entity.*;
 import com.example.blds.service.*;
+import com.example.blds.util.ChineseCharacterUtil;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
 import com.example.blds.util.TokenUtil;
@@ -21,6 +23,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.shiro.crypto.hash.SimpleHash;
+import org.apache.shiro.util.ByteSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -60,12 +64,14 @@ public class BlAdminController {
 
     @Autowired
     private HzHospitalMapper hzHospitalMapper;
-
     @Autowired
     private HzLoginInfoService loginInfoService;
-
     @Autowired
     private HzUserService hzUserService;
+
+    @Autowired
+    private HzUserMapper hzUserMapper;
+
 
     @ApiOperation(value = "回退")
     @ResponseBody
@@ -297,7 +303,7 @@ public class BlAdminController {
         });
         return null;
     }
-
+    @ResponseBody
     @PostMapping(value = "/importUserList.htm")
     public Result importUsersList(
             @ApiParam(value = "file detail") @RequestPart("file") MultipartFile file,
@@ -322,7 +328,7 @@ public class BlAdminController {
                     workbook = new HSSFWorkbook(bufferedInputStream);
                 }
                 if (workbook != null) {
-                    List errorLists=getUsersFromFile(workbook);
+                    List errorLists=getUsersFromFile(workbook,jsonObject);
                     bufferedInputStream.close();
                     if (errorLists.size()>0)
                         return ResultGenerator.genFailResult(errorLists);
@@ -335,20 +341,43 @@ public class BlAdminController {
 
     }
 
-        private List getUsersFromFile(Workbook workbook) {
+        private List getUsersFromFile(Workbook workbook,JSONObject obj) {
         List errorLists=new ArrayList();
         Sheet sheet = workbook.getSheetAt(0);
         DecimalFormat decimalFormat=new DecimalFormat("#");
+        String str=ChineseCharacterUtil.convertHanzi2Pinyin(obj.optString("hospitalName"),false);
         Row row;
+        HzLoginInfo hzLoginInfo=new HzLoginInfo();
+        hzLoginInfo.setIsDelete(0);
+        hzLoginInfo.setCreateTime(new Date());
+        HzUser hzUser=new HzUser();
+        hzUser.setIsDelete(0);
+        hzUser.setHospitalName(obj.optString("hospitalName"));
+        hzUser.setHospitalId(obj.optLong("hospitalId"));
+        hzUser.setUserState(0);
+        hzUser.setIsSuper(0);
+        hzUser.setCreateTime(new Date());
         for (int j = 1; j < sheet.getPhysicalNumberOfRows(); j++) {
             row = sheet.getRow(j);
-//            loginInfoService.getByUsername();
-//            HzUser checkuser=hzUserService.getByUsername((login_name.substring(0, login_name.indexOf('.'))));
-//            if (checkuser!=null){
-//                errorLists.add(j);
-//                continue;
-//            }
-
+            String loginName=str.concat(decimalFormat.format(sheet.getRow(j).getCell(5).getNumericCellValue()));
+            if (loginInfoService.getByUsername(loginName)!=null){
+                errorLists.add(row.getCell(0).getStringCellValue());
+                continue;
+            }
+            hzLoginInfo.setLoginName(loginName);
+            hzLoginInfo.setPassword(new SimpleHash("md5", "123456", ByteSource.Util.bytes(""),
+                    2).toHex());
+            Integer id=loginInfoService.save(hzLoginInfo);
+            hzUser.setUserId(Long.valueOf(id));
+            hzUser.setUserState(0);
+            hzUser.setName(row.getCell(0).getStringCellValue());
+            hzUser.setPhone(decimalFormat.format(row.getCell(1).getNumericCellValue()));
+            hzUser.setPosition(row.getCell(2).getStringCellValue());
+            hzUser.setSex(row.getCell(3).getStringCellValue());
+            hzUser.setDepartment(row.getCell(4).getStringCellValue());
+            hzUserMapper.insert(hzUser);
+            hzUser.setId(null);
+            hzLoginInfo.setUid(null);
         }
         return errorLists;
     }

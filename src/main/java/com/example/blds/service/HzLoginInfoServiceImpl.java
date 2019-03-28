@@ -28,11 +28,11 @@ public class HzLoginInfoServiceImpl implements HzLoginInfoService {
     }
 
     @Override
-    public boolean save(HzLoginInfo user) {
+    public Integer save(HzLoginInfo user) {
         user.setCreateTime(new Date());
         user.setIsDelete(0);
         hzLoginInfoMapper.insert(user);
-        return true;
+        return user.getUid();
     }
 
     @Override

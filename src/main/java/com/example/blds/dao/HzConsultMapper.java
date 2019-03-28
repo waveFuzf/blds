@@ -94,7 +94,9 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
             "<if test='radio != 300 '>",
             "and c.case_type_id = #{radio}",
             "</if>",
+            "<if test='hospitalId == null or hospitalId==\"\"' >",
             "and cd.doctor_type=0",
+            "</if>",
             "</where>",
             "</script>"
     })

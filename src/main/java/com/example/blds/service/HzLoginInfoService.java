@@ -7,7 +7,7 @@ import com.example.blds.entity.HzLoginInfo;
 public interface HzLoginInfoService {
     HzLoginInfo getByUsername(String username);
 
-    boolean save(HzLoginInfo hzLoginInfo);
+    Integer save(HzLoginInfo hzLoginInfo);
 
     Integer createAdmin(HzHospital hzHospital);
 }

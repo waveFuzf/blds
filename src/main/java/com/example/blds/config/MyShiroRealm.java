@@ -1,5 +1,7 @@
 package com.example.blds.config;
 
+import com.example.blds.entity.HzLoginInfo;
+import com.example.blds.service.HzLoginInfoService;
 import com.example.blds.service.HzUserService;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
@@ -14,7 +16,8 @@ import javax.annotation.Resource;
 
 public class MyShiroRealm extends AuthorizingRealm {
     @Resource
-    public HzUserService hzUserService;
+    public HzLoginInfoService hzUserService;
+
 
     /**
      * 授权

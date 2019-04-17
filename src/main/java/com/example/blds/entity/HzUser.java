@@ -61,4 +61,8 @@ public class HzUser {
     @Transient
     private Integer price;
 
+    private String goodAt;
+
+    private List<HzPriceConfig> prices;
+
 }

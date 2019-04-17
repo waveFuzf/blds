@@ -22,7 +22,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 评价管理 申请医生评价
@@ -50,13 +52,17 @@ public class BlEvaluateController {
     @ResponseBody
     public Result applyDoctorEvaluate(HttpServletRequest request,
               @ApiParam(name="consultId", value="加密的评价病例id") @RequestParam(value="consultId") String consultId,
-              @ApiParam(name="evaluateWhole", value="整体评价 1~5") @RequestParam(value="evaluateWhole") Integer evaluateWhole,
-              @ApiParam(name="evaluateProfession", value="专业评价 1~5") @RequestParam(value="evaluateProfession") Integer evaluateProfession,
-              @ApiParam(name="evaluateIntime", value="及时性评价 1~5") @RequestParam(value="evaluateIntime") Integer evaluateIntime,
+              @ApiParam(name="evaluateWhole", value="整体评价 1~5") @RequestParam(value="evaluateWhole",required = false) Integer evaluateWhole,
+              @ApiParam(name="evaluateProfession", value="专业评价 1~5") @RequestParam(value="evaluateProfession",required = false) Integer evaluateProfession,
+              @ApiParam(name="evaluateIntime", value="及时性评价 1~5") @RequestParam(value="evaluateIntime",required = false) Integer evaluateIntime,
               @ApiParam(name="evaluateText", value="文字评价") @RequestParam(value="evaluateText") String evaluateText,
               @ApiParam(name="type",value = "类型")@RequestParam (value = "type")Integer type
     ) throws Exception {
-
+        String str=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (str.equals("token无效")){
+            return ResultGenerator.genFailResult("用户token无效");
+        }
+        JSONObject obj=JSONObject.fromObject(str);
         Integer consid = Crypt.desDecryptByInteger(consultId,Enumeration.SECRET_KEY.CONSULT_ID_KEY);
 
         HzConsult consult = consultService.selectById(consid);
@@ -64,7 +70,7 @@ public class BlEvaluateController {
         if (consult==null||!(consult.getConsultStatus()==6)){
             return ResultGenerator.genFailResult("病例不存在或病例数据异常！");
         }
-        HzEvaluate eva=evaluateService.selEvaluateByConsultId(consid);
+        HzEvaluate eva=evaluateService.selEvaluateByConsultId(consid,obj.optInt("userId"));
         if(eva!=null&&type==0){
             return ResultGenerator.genFailResult("请勿二次评价！");
         }
@@ -120,11 +126,13 @@ public class BlEvaluateController {
     @PostMapping("/selectEvaluateByConsultId.htm")
     @ResponseBody
     public Result selectDiagnosByConsultId(
-            @ApiParam(name="consultId", value="密文病例id") @RequestParam(value="consultId") String consultId)
+            @ApiParam(name="consultId", value="密文病例id") @RequestParam(value="consultId") String consultId,
+            @ApiParam(name="userId", value="用户id") @RequestParam(value="userId",required = false) Integer userId,
+            @ApiParam(name="type",value = "用户类型")@RequestParam(value = "type")Integer type)
             throws Exception{
         Integer consultSelId = Crypt.desDecryptByInteger(consultId, Enumeration.SECRET_KEY.CONSULT_ID_KEY);
 
-        HzEvaluate evaluate = evaluateService.selEvaluateByConsultId(consultSelId);
+        HzEvaluate evaluate = evaluateService.selEvaluateByConsultId(consultSelId,userId,type);
         if(evaluate != null) {
             evaluate.setEvaluate_id(Crypt.desEncrypt(evaluate.getId().toString(),Enumeration.SECRET_KEY.EVALUATE_ID_KEY));
             evaluate.setId(null);
@@ -133,5 +141,20 @@ public class BlEvaluateController {
 
         return ResultGenerator.genSuccessResult(evaluate);
     }
+
+    @ApiOperation(value = "根据医生ID查询评价")
+    @PostMapping("/selectEvaluateById.htm")
+    @ResponseBody
+    public Result selectEvaluateById(
+            @ApiParam(name="doctorId", value="医生ID") @RequestParam(value="doctorId") Integer doctorId,
+            @RequestParam(value = "pageNo",required = false,defaultValue = "1")Integer pageNo)
+            throws Exception{
+        List<HzEvaluate> evaluates=new ArrayList<>();
+        evaluates=evaluateService.selEvaluateById(doctorId,pageNo);
+        return ResultGenerator.genSuccessResult(evaluates);
+
+
+    }
+
 
 }

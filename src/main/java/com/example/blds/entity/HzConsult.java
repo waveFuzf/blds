@@ -25,10 +25,6 @@ public class HzConsult {
 
     private Integer caseTypeId;
 
-//    private Integer verifyStatus;
-
-//    private String verifyReason;
-
     private Integer isCancel;
 
     private Integer payType;
@@ -55,10 +51,6 @@ public class HzConsult {
 
     private String reason;
 
-    private Date supplementCommitTime;
-
-    private Date supplementReportTime;
-
     private Date createTime;
 
     private Date updateTime;
@@ -66,8 +58,6 @@ public class HzConsult {
     private Integer isDelete;
 
     private Date deleteTime;
-
-    private Integer preferentialPrice;
 
     private String phone;
 
@@ -99,12 +89,5 @@ public class HzConsult {
 
     @Transient
     private Integer doctorType;
-
-    public static void main(String[] args) {
-        HzConsult hzConsult=new HzConsult();
-        hzConsult.setCreateTime(new Date());
-        System.out.println(hzConsult);
-        System.out.println(JSON.toJSON(hzConsult));
-    }
 
 }

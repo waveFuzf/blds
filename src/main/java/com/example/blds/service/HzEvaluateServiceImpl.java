@@ -2,6 +2,7 @@ package com.example.blds.service;
 
 import com.example.blds.dao.HzEvaluateMapper;
 import com.example.blds.entity.HzEvaluate;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +16,13 @@ public class HzEvaluateServiceImpl implements HzEvaluateService {
     @Autowired
     private HzEvaluateMapper evaluateMapper;
     @Override
-    public HzEvaluate selEvaluateByConsultId(Integer consid) {
+    public HzEvaluate selEvaluateByConsultId(Integer consid, Integer userId,Integer type) {
+        return evaluateMapper.selEvaluateByConsultId(consid,userId,type);
+    }
+    @Override
+    public HzEvaluate selEvaluateByConsultId(Integer consid,Integer userId) {
         Example example=new Example(HzEvaluate.class);
-        example.createCriteria().andEqualTo("consultId",consid).andEqualTo("isDelete",0);
+        example.createCriteria().andEqualTo("consultId",consid).andEqualTo("isDelete",0).andEqualTo("evaluateType",0).andEqualTo("evaluatorId",userId);
         return evaluateMapper.selectOneByExample(example);
     }
 
@@ -38,6 +43,12 @@ public class HzEvaluateServiceImpl implements HzEvaluateService {
         return new PageInfo<>(list);
     }
 
+    @Override
+    public List<HzEvaluate> selEvaluateById(Integer doctorId, Integer pageNo) {
+        Page<HzEvaluate> pageInfo = PageHelper.startPage(pageNo, 5);
+        List<HzEvaluate> list = evaluateMapper.getEvalatesByDoctorId(doctorId);
+        return pageInfo;
+    }
 
 
 }

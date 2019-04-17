@@ -5,6 +5,8 @@ import lombok.Data;
 import javax.persistence.Id;
 import javax.persistence.Transient;
 import java.util.Date;
+import java.util.List;
+
 @Data
 public class HzEvaluate {
     @Id
@@ -41,4 +43,6 @@ public class HzEvaluate {
 
     @Transient
     private String doctorName;
+    @Transient
+    private List<HzEvaluate> additionalComments;
 }

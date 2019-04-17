@@ -34,7 +34,8 @@ public interface HzUserMapper extends tkMapper<HzUser> {
             "select * from hz_user where user_id = #{doctorId}"
     })
     @Results({
-            @Result(column = "user_id",property = "evaluates",many = @Many(select = "com.example.blds.dao.HzEvaluateMapper.getEvalatesByDoctorId"))
+            @Result(column = "user_id",property = "evaluates",many = @Many(select = "com.example.blds.dao.HzEvaluateMapper.getEvalatesByDoctorId")),
+            @Result(column = "position",property = "prices",many = @Many(select ="com.example.blds.dao.HzPriceConfigMapper.selectByPosition"))
     })
     HzUser getExpertsInfoById(Integer doctorId);
     @Select({

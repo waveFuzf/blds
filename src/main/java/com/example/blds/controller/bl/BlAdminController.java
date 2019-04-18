@@ -13,6 +13,8 @@ import com.example.blds.util.ChineseCharacterUtil;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
 import com.example.blds.util.TokenUtil;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -71,6 +73,28 @@ public class BlAdminController {
 
     @Autowired
     private HzUserMapper hzUserMapper;
+
+    @ApiOperation("管理员获取医生列表")
+    @ResponseBody
+    @PostMapping("getUserLists.htm")
+    public Result getUserLists(HttpServletRequest request,@RequestParam("pageNo")Integer pageNo,
+                               @RequestParam(value = "name",required = false,defaultValue = "")String name){
+        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+        if (res.equals("token无效")){
+            return ResultGenerator.genFailResult(res);
+        }
+        JSONObject object=JSONObject.fromObject(res);
+        if (!object.optString("isSuper").equals("1")){
+            return ResultGenerator.genFailResult("你木的权限");
+        }
+        Page<HzUser> pageInfo = PageHelper.startPage(pageNo, 10);
+        List<HzUser> users=hzUserService.getUsersByHospitalId(JSONObject.fromObject(res).optString("hospitalId"),pageNo,name);
+
+
+        return ResultGenerator.genSuccessResult(pageInfo,pageInfo.getTotal());
+
+    }
+
 
 
     @ApiOperation(value = "回退")

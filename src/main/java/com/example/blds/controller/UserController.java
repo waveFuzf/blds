@@ -115,22 +115,22 @@ public class UserController {
 //        }
 //        return  ResultGenerator.genSuccessResult("更新成功");
 //    }
-//    @PostMapping("/deleteUser")
-//    public Result delete(@ApiParam(value = "用户Id",example = "1")@RequestParam Integer userId,
-//                         @ApiParam(value = "用户token",required = true)@RequestParam String token){
-//        String login_name=tokenUtil.checkToken(token);
-//        if (login_name.equals("token无效")){
-//            return ResultGenerator.genFailResult(login_name);
-//        }
-//        JSONObject jsonObject=JSONObject.fromObject(login_name);
-//        if (jsonObject.optString("isSuper").equals("0")){
-//            return ResultGenerator.genFailResult("权限不足");
-//        }
-//        if (userService.deleteByUserId(userId)==1){
-//            return ResultGenerator.genSuccessResult("成功删除用户");
-//        }
-//        return ResultGenerator.genSuccessResult("用户不存在");
-//    }
+    @PostMapping("/deleteUser")
+    public Result delete(@ApiParam(value = "用户Id",example = "1")@RequestParam Integer userId,
+                         @ApiParam(value = "用户token",required = true)@RequestParam String token){
+        String login_name=tokenUtil.checkToken(token);
+        if (login_name.equals("token无效")){
+            return ResultGenerator.genFailResult(login_name);
+        }
+        JSONObject jsonObject=JSONObject.fromObject(login_name);
+        if (jsonObject.optString("isSuper").equals("0")){
+            return ResultGenerator.genFailResult("权限不足");
+        }
+        if (userService.deleteByUserId(userId,jsonObject.optString("hospitalId"))){
+            return ResultGenerator.genSuccessResult("成功删除用户");
+        }
+        return ResultGenerator.genSuccessResult("用户不存在");
+    }
 //
 //    @GetMapping("getUserExcelFile")
 //    public void getUserExcelFile(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {

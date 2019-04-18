@@ -54,4 +54,31 @@ public interface HzUserMapper extends tkMapper<HzUser> {
                     "where hz_user.name LIKE #{name} and hz_price_config.price_type_id = #{caseTypeId} ORDER BY hz_user.user_score DESC,hz_user.total_consulation DESC"
     })
     List<HzUser> getExpertsInfoAndPriceByTag(@Param("name") String name, @Param("caseTypeId") Integer caseTypeId);
+    @Select({
+            "<script>",
+            "select * from hz_user ",
+            "<where>",
+            "<if test='hosid != null and hosid !=\"\"'>",
+            "hospital_id = #{hosid}",
+            "</if>",
+            "<if test='name != null'>",
+            "name like #{name}",
+            "</if>",
+            "and is_delete=0 and is_super = 0 ",
+            "</where>" ,
+            "</script>"
+    })
+    List<HzUser> getUsersByHospitalId(@Param("hosid") String hospitalId,@Param("name")String name);
+    @Update({
+            "<script>",
+            "Update hz_user SET is_delete=1",
+            "<where>",
+            "<if test='hosid !=null and hosid !=\"\"'>",
+            "and hospital_id=#{hosdi}",
+            "</if>",
+            "and is_delete=0 and is_super = 0 and id=#{consultId}",
+            "</where>",
+            "</script>"
+    })
+    Integer deleteByUserId(@Param("consultId") Integer userId,@Param("hosid") String hospitalId);
 }

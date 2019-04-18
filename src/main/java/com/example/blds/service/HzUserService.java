@@ -17,4 +17,8 @@ public interface HzUserService {
     List<HzUser> getExpertsInfoByName(String name, Integer pageSize, Integer pageNo, Integer caseTypeId);
 
     Integer createAdmin(HzHospital hzHospital, Integer id);
+
+    List<HzUser> getUsersByHospitalId(String hospitalId, Integer pageNo, String name);
+
+    boolean deleteByUserId(Integer userId, String hospitalId);
 }

@@ -8,6 +8,7 @@ import com.github.pagehelper.PageHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -76,5 +77,23 @@ public class HzUserServiceImpl implements HzUserService {
         hzUser.setIsDelete(0);
         hzUserMapper.insert(hzUser);
         return null;
+    }
+
+    @Override
+    public List<HzUser> getUsersByHospitalId(String hospitalId, Integer pageNo, String name) {
+        List<HzUser> user=new ArrayList<>();
+        if (Objects.equals(name,"")){
+            user=hzUserMapper.getUsersByHospitalId(hospitalId,null);
+        }else {
+            user=hzUserMapper.getUsersByHospitalId(hospitalId,"%"+name+"%");
+        }
+
+        return user;
+    }
+
+    @Override
+    public boolean deleteByUserId(Integer userId, String hospitalId) {
+
+        return hzUserMapper.deleteByUserId(userId,hospitalId)==1;
     }
 }

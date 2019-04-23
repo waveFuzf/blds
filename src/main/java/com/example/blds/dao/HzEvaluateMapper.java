@@ -11,10 +11,11 @@ public interface HzEvaluateMapper extends tkMapper<HzEvaluate> {
     List<HzEvaluate> getExpertEvaluateList(int evaluateType, Long evaluatorId, Long evaluateeId);
 
     @Select({
-            "select * from hz_evaluate where evaluatee_id = #{doctorId} and evaluate_status=0 and evaluate_type=0 and is_delete=0"
+            "select e.*,u.name from hz_evaluate e left join hz_user u on u.id=e.evaluator_id where e.evaluatee_id = #{doctorId} and e.evaluate_status=0 and e.evaluate_type=0 and e.is_delete=0"
     })
     @Results({
-            @Result(column = "{evaluatorId=evaluator_id,consid=consult_id}",property = "additionalComments",many = @Many(select = "com.example.blds.dao.HzEvaluateMapper.getAdditionalComments"))
+            @Result(column = "{evaluatorId=evaluator_id,consid=consult_id}",property = "additionalComments",many = @Many(select = "com.example.blds.dao.HzEvaluateMapper.getAdditionalComments")),
+            @Result(column = "name",property = "doctorName")
     })
     List<HzEvaluate> getEvalatesByDoctorId(Integer doctorId);
 

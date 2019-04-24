@@ -1,7 +1,10 @@
 package com.example.blds.config;
 
 import java.util.Date;
+import java.util.Random;
+import java.util.UUID;
 
+import com.example.blds.entity.HzUser;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,16 +23,17 @@ public class QuratzScheduler {
         return schedulerFactoryBean.getScheduler();
     }
 
-    public void startJob() throws SchedulerException {
-        startJob1(scheduler);
+    public void dosth(HzUser user) throws SchedulerException {
+        startSchedule(scheduler,user);
         scheduler.start();
     }
 
-    private void startJob1(Scheduler scheduler) throws SchedulerException {
-        JobDetail jobDetail = JobBuilder.newJob(SchedulerQuartzJob1.class).withIdentity("job1", "group1").build();
-
-        Trigger cronTrigger = TriggerBuilder.newTrigger().withIdentity("job1", "group1")
-                .startAt(new Date()).build();
+    private void startSchedule(Scheduler scheduler,HzUser user) throws SchedulerException {
+        Random rod=new Random();
+        JobDetail jobDetail = JobBuilder.newJob(SchedulerQuartzJob1.class).withIdentity(UUID.randomUUID().toString(), "group1").build();
+        jobDetail.getJobDataMap().put("USER",user);
+        Trigger cronTrigger = TriggerBuilder.newTrigger().withIdentity(UUID.randomUUID().toString(), "group1")
+                .startAt(DateBuilder.futureDate(1, DateBuilder.IntervalUnit.MINUTE)).build();
         scheduler.scheduleJob(jobDetail, cronTrigger);
     }
 

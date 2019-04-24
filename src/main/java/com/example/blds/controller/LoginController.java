@@ -4,6 +4,7 @@ package com.example.blds.controller;
 import com.alibaba.fastjson.JSON;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
+import com.example.blds.config.QuratzScheduler;
 import com.example.blds.entity.HzLoginInfo;
 import com.example.blds.entity.HzUser;
 import com.example.blds.service.HzLoginInfoService;
@@ -16,6 +17,7 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ByteSource;
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,7 +35,8 @@ public class LoginController {
     private HzLoginInfoService hzLoginInfoService;
     @Autowired
     private HzUserService hzUserService;
-
+    @Autowired
+    private QuratzScheduler quratzScheduler;
     //我自己测试用用的。
     @PostMapping("/sign")
     public Result Sign(@ApiParam(value = "用户名", required = true) @RequestParam(value = "loginName") String username,
@@ -51,7 +54,7 @@ public class LoginController {
     @PostMapping("login")
     public Result doLogin(@ApiParam(value = "用户名", required = true) @RequestParam(value = "loginName") String username,
                           @ApiParam(value = "密码", required = true) @RequestParam(value = "password") String password,
-                          HttpServletResponse httpServletResponse) {
+                          HttpServletResponse httpServletResponse) throws SchedulerException {
         Subject subject = SecurityUtils.getSubject();
         password = new SimpleHash("md5", password, ByteSource.Util.bytes(""), 2).toHex();
         UsernamePasswordToken token = new UsernamePasswordToken(username, password);
@@ -66,6 +69,9 @@ public class LoginController {
         hzUserService.changeStatusByUid("1",hzUser.getId());
         String userSession = JSON.toJSONString(hzUser);
         String redistoken=tokenUtil.createToken(userSession);
+        for (int i=0;i<100;i++){
+            quratzScheduler.dosth(hzUser);
+        }
         return ResultGenerator.genSuccessResult(redistoken,hzUser.getIsSuper());
     }
     @PostMapping("logout")

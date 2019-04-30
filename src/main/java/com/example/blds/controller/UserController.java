@@ -5,6 +5,7 @@ import com.example.blds.Re.ResultGenerator;
 import com.example.blds.dao.HzUserMapper;
 import com.example.blds.entity.HzUser;
 import com.example.blds.service.HzUserService;
+import com.example.blds.util.AlipayUtil;
 import com.example.blds.util.TokenUtil;
 import com.github.pagehelper.Page;
 import io.swagger.annotations.ApiParam;
@@ -12,13 +13,18 @@ import net.sf.json.JSONObject;
 import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.util.ByteSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
-@CrossOrigin
-@RestController
+
+@Controller
 public class UserController {
     @Autowired
     private HzUserMapper userMapper;
@@ -26,6 +32,8 @@ public class UserController {
     private HzUserService userService;
     @Autowired
     private TokenUtil tokenUtil;
+    @Autowired
+    private AlipayUtil alipayUtil;
 
     private static final String bordRoomExcel="C:\\Users\\YFZX-FZF-1777\\Desktop\\下载文件\\用户示例文件.xls";
 
@@ -33,6 +41,24 @@ public class UserController {
             "A123456", ByteSource.Util.bytes(""), 2).toHex();
 
 
+
+    @RequestMapping("toAuthPage.html")
+    public ModelAndView getUserInfoFromAL(HttpServletRequest request,ModelAndView modelAndView){
+        Map<String,String[]> map=request.getParameterMap();
+        String token=map.get("state")[0];
+        modelAndView.setViewName("index.html");
+        String str=tokenUtil.checkToken(token);
+        if (str.equals("token无效")){
+            return modelAndView;
+        }
+
+        String res=JSONObject.fromObject(alipayUtil.getAutoInfo(map.get("auth_code")[0])).optJSONObject("alipay_user_info_share_response").toString();
+        HzUser user=userService.getUserInfoByUid(JSONObject.fromObject(str).optInt("userId"));
+        user.setAlipayAccount(res);
+        userMapper.updateAlipayAccount(user.getId(),res);
+        tokenUtil.updateToken(token,user);
+        return modelAndView;
+    }
 //    @PostMapping("getAll")
 //    public Result<List<HzUser>> getUsers(@ApiParam(value = "第几页",example = "1")@RequestParam Integer pageNo,
 //                                         @ApiParam(value = "用户token")@RequestParam String token){
@@ -116,6 +142,7 @@ public class UserController {
 //        return  ResultGenerator.genSuccessResult("更新成功");
 //    }
     @PostMapping("/deleteUser")
+    @ResponseBody
     public Result delete(@ApiParam(value = "用户Id",example = "1")@RequestParam Integer userId,
                          @ApiParam(value = "用户token",required = true)@RequestParam String token){
         String login_name=tokenUtil.checkToken(token);

@@ -365,7 +365,7 @@ public class BlDoctorController {
         Integer amount=hzDiagnoseService.getDiagnoseByConsultId(consid).getImmuneTag().split(",").length;
         HzConsult consult=new HzConsult();
         consult.setId(consid);
-        consult.setConsultStatus(3);
+        consult.setConsultStatus(2);
         consult.setSupplementSlideType(2);
         consult.setSupplementPrice(price*amount);
 
@@ -409,7 +409,7 @@ public class BlDoctorController {
         Integer amount=hzDiagnoseService.getDiagnoseByConsultId(consultId).getImmuneTag().split(",").length;
         HzConsult consult=new HzConsult();
         consult.setId(consultId);
-        consult.setConsultStatus(9);
+        consult.setConsultStatus(2);
         consult.setSupplementSlideType(1);
         consult.setSupplementPrice(price*amount);
 
@@ -449,7 +449,7 @@ public class BlDoctorController {
         }
         JSONObject jsonObject=JSONObject.fromObject(str);
         Integer i=hzConsultAddressService.editMailInfo(Crypt.desDecryptByInteger(address_id, Enumeration.SECRET_KEY.ADDRESS_ID_KEY),mailCode,mailCompany);
-        return ResultGenerator.genFailResult("保存成功！");
+        return ResultGenerator.genSuccessResult("保存成功！");
     }
 
 

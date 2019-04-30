@@ -1,5 +1,7 @@
 package com.example.blds.util;
 
+import com.alibaba.fastjson.JSON;
+import com.example.blds.entity.HzUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -13,7 +15,7 @@ public class TokenUtil {
     private RedisTemplate redisTemplate;
     public String createToken (String userSession){
         String tokenId = UUID.randomUUID().toString().replace("-","");
-        redisTemplate.boundValueOps(tokenId).set(userSession.toString(),15000,TimeUnit.SECONDS);
+        redisTemplate.boundValueOps(tokenId).set(userSession,15000,TimeUnit.SECONDS);
         return tokenId;
     }
 
@@ -31,4 +33,7 @@ public class TokenUtil {
             redisTemplate.delete (token);
     }
 
+    public void updateToken(String token, HzUser user) {
+        redisTemplate.boundValueOps(token).set(JSON.toJSONString(user));
+    }
 }

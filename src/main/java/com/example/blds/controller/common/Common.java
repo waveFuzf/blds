@@ -13,6 +13,7 @@ import com.example.blds.service.HzConsultService;
 import com.example.blds.service.HzDiagnoseService;
 import com.example.blds.service.HzSlidesService;
 import com.example.blds.service.HzSupplementReportService;
+import com.example.blds.util.AlipayUtil;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.HtmlGenerator;
 import com.itextpdf.text.Document;
@@ -21,6 +22,7 @@ import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.tool.xml.XMLWorkerHelper;
 import freemarker.template.TemplateException;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import net.sf.json.JSONObject;
@@ -40,14 +42,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.*;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 
 /**
@@ -78,6 +78,8 @@ public class Common {
     private RedisTemplate<String, String> redisTemplate;
 
     private SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyy-MM-dd");
+    @Autowired
+    private AlipayUtil alipayUtil;
 
     @Value("${file.url}")
     private String fileUrl;
@@ -90,17 +92,18 @@ public class Common {
     public Result getPayPath(
             @ApiParam(name = "consult_id", value = "加密consultId", required = true) @RequestParam(value = "consult_id") String consult_id,
             @ApiParam(name = "payType", value = "支付方式。1支付宝，2线下", required = true) @RequestParam(value = "payType") int payType,
-            @ApiParam(name = "bcjc", value = "1补充检查 0普通病例") @RequestParam(value = "bcjc") int bcjc,
-            @ApiParam(name = "token", value = "token") @RequestParam(value = "token") String token
+            @ApiParam(name = "bcjc", value = "1补充检查 0普通病例") @RequestParam(value = "bcjc") int bcjc
             ) throws Exception {
-        JSONObject jsonObject = new JSONObject();
+//        JSONObject jsonObject = new JSONObject();
         int consultId = Integer.parseInt(Crypt.desDecrypt(consult_id, com.example.blds.util.Enumeration.SECRET_KEY.CONSULT_ID_KEY));
         HzConsult consult = consultService.selectById(consultId);
+        consult.setId(consultId);
         //应付费用
+        String fee=null;
         if (bcjc == 1) {
-            jsonObject.put("fee", consult.getSupplementPrice());
+            fee= BigDecimal.valueOf(Long.valueOf(consult.getSupplementPrice())).divide(new BigDecimal(100)).toString();
         } else{
-            jsonObject.put("fee", consult.getPrice());
+            fee=BigDecimal.valueOf(Long.valueOf(consult.getPrice())).divide(new BigDecimal(100)).toString();
         }
 
         if (payType == 2) {
@@ -116,8 +119,23 @@ public class Common {
                 return ResultGenerator.genFailResult("数据库更新失败");
             }
             return ResultGenerator.genSuccessResult("支付成功!");
+        }else {
+            boolean tag = bcjc==1;
+            String orderId=tag?consult.getBcjcPayOrderNo():consult.getPayOrderNo();
+            if (Objects.equals(orderId,"")|| Objects.equals(orderId,null)){
+                String flag=bcjc==1?"BCJC":"BLDS";
+                orderId= flag.concat(UUID.randomUUID().toString().replace("-",""));
+            }
+            if (tag) {
+                consult.setBcjcPayOrderNo(orderId);
+            } else {
+                consult.setPayOrderNo(orderId);
+            }
+            consultService.updateByConsult(consult);
+            String response= alipayUtil.getPayUrl(fee,orderId,consult_id);
+            return ResultGenerator.genSuccessResult(response);
         }
-        return ResultGenerator.genFailResult("暂未开通支付功能");
+//        return ResultGenerator.genFailResult("暂未开通支付功能");
     }
 
 

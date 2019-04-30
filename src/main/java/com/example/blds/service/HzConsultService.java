@@ -33,4 +33,6 @@ public interface HzConsultService {
     List<HzConsult> selectByFormInfo(String hospitalId, List<Integer> consultStatusList, String startTime, String endTime, Integer pageSize, Integer pageNum, Integer radio);
 
     List<QualityInfo> selectQualityInfo(String beginTime, String endTime, String activeName, String radio);
+
+    void updatePayStatus(String orderNo, String trade_no, boolean bcjc);
 }

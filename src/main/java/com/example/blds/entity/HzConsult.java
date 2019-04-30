@@ -17,6 +17,10 @@ public class HzConsult {
 
     private Integer slideType;
 
+    private String transOutBizNo;
+
+    private String transOrderNo;
+
     private Integer supplementSlideType;
 
     private Integer consultStatus;
@@ -33,9 +37,15 @@ public class HzConsult {
 
     private String payOrderNo;
 
-    private Long payOrderCreateTime;
+    private Integer backStatus;
 
-    private Integer drawBackStatus;
+    private Integer bcjcPayType;
+
+    private String bcjcPayUrl;
+
+    private String bcjcPayOrderNo;
+
+    private Integer bcjcBackStatus;
 
     private String caseTypeName;
 

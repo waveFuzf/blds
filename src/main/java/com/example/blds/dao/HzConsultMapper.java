@@ -168,4 +168,11 @@ public interface HzConsultMapper extends tkMapper<HzConsult> {
             @Result(column = "four",property = "four",jdbcType = JdbcType.INTEGER),
     })
     List<QualityInfo> selectQualityInfoByParts(@Param("startTime") String beginTime, @Param("endTime") String endTime, @Param("activeName") String activeName);
+
+    @Update("Update hz_consult SET pay_url=#{tradeNo},pay_type = 1,consult_status=4  where pay_order_no=#{orderNo} and is_delete=0 ")
+    void updateByOrderNo(@Param("orderNo") String orderNo, @Param("tradeNo") String trade_no);
+
+    @Update("UPDATE hz_consult\n" +
+            "SET bcjc_pay_url = #{tradeNo},bcjc_pay_type = 1,consult_status=(case when supplement_slide_type=2 then 3 else 9 end) where bcjc_pay_order_no=#{orderNo} and is_delete=0 \n")
+    void updateBCJCByOrderNo(@Param("orderNo") String orderNo, @Param("tradeNo") String trade_no);
 }

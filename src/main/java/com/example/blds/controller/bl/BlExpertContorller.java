@@ -14,6 +14,7 @@ import com.example.blds.entity.HzSlide;
 import com.example.blds.service.HzConsultService;
 import com.example.blds.service.HzDiagnoseService;
 import com.example.blds.service.HzSlidesService;
+import com.example.blds.util.AlipayUtil;
 import com.example.blds.util.Crypt;
 import com.example.blds.util.Enumeration;
 import com.example.blds.util.TokenUtil;
@@ -33,6 +34,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -43,6 +45,8 @@ import java.util.List;
 @RequestMapping("/blexpert")
 @Controller
 public class BlExpertContorller {
+    @Autowired
+    private AlipayUtil alipayUtil;
 
     @Autowired
     private HzConsultService consultService;
@@ -243,11 +247,15 @@ public class BlExpertContorller {
             return ResultGenerator.genFailResult("休想,还想改别人的病理申请!");
         }
         HzConsult consult = consultMapper.selectByPrimaryKey(consid);
-        if (consult==null && consult.getConsultStatus()==4){
+        if (consult==null || consult.getConsultStatus()!=4){
             return ResultGenerator.genFailResult("病理状态不正确,请联系管理员!");
         }
         consult.setReasonCancel(reason);
         consult.setConsultStatus(5);
+        if (!alipayUtil.refundPay(BigDecimal.valueOf(Long.valueOf(consult.getPrice())).divide(new BigDecimal(100)).toString(),consult.getPayOrderNo())){
+            return ResultGenerator.genFailResult("失败");
+        }
+        consult.setBackStatus(1);
         int n=consultMapper.updateByPrimaryKeySelective(consult);
         return n==1?ResultGenerator.genSuccessResult("成功!"):ResultGenerator.genFailResult("失败");
     }

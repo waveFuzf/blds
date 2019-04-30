@@ -1,5 +1,6 @@
 package com.example.blds.controller.bl;
 
+import com.alipay.api.AlipayClient;
 import com.example.blds.Re.Result;
 import com.example.blds.Re.ResultGenerator;
 import com.example.blds.aop.UserTokenAop;
@@ -9,10 +10,7 @@ import com.example.blds.dao.HzSupplementReportMapper;
 import com.example.blds.dao.HzUserMapper;
 import com.example.blds.entity.*;
 import com.example.blds.service.*;
-import com.example.blds.util.ChineseCharacterUtil;
-import com.example.blds.util.Crypt;
-import com.example.blds.util.Enumeration;
-import com.example.blds.util.TokenUtil;
+import com.example.blds.util.*;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import io.swagger.annotations.Api;
@@ -36,15 +34,19 @@ import tk.mybatis.mapper.entity.Example;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Api(tags = "【管理员】")
 @RequestMapping("/bladmin")
 @Controller
 public class BlAdminController {
+    @Autowired
+    private AlipayUtil alipayClient;
 
     @Autowired
     private HzConsultService consultService;
@@ -129,21 +131,37 @@ public class BlAdminController {
             @ApiParam(name="type", value="type")@RequestParam(value="type") boolean type,
             HttpServletRequest request
     ) throws Exception {
-        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
-        if (res.equals("token无效")){
-            return ResultGenerator.genFailResult(res);
-        }
-        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
-            return ResultGenerator.genFailResult("你木的权限");
-        }
+//        String res=tokenUtil.checkToken(request.getCookies()[1].getValue());
+//        if (res.equals("token无效")){
+//            return ResultGenerator.genFailResult(res);
+//        }
+//        if (!JSONObject.fromObject(res).optString("isSuper").equals("1")){
+//            return ResultGenerator.genFailResult("你木的权限");
+//        }
         String consid=Crypt.desDecrypt(consultId,Enumeration.SECRET_KEY.CONSULT_ID_KEY);
-        if (!consultService.isConsultStatus(Integer.valueOf(consid),6)){
-            return ResultGenerator.genFailResult("该状态不能改变");
-        }
+//        if (!consultService.isConsultStatus(Integer.valueOf(consid),6)){
+//            return ResultGenerator.genFailResult("该状态不能改变");
+//        }
         HzConsult hzConsult=new HzConsult();
         hzConsult.setId(Integer.valueOf(consid));
         hzConsult.setIsSettlement(type?1:0);
         int i=consultService.updateByConsult(hzConsult);
+        if (i==1&&type){
+            hzConsult=consultService.selectById(Integer.valueOf(consid));
+            BigDecimal amount=new BigDecimal("0");
+            if (hzConsult.getPayType()==1&&hzConsult.getPrice()!=null){
+                amount=amount.add(BigDecimal.valueOf(hzConsult.getPrice()));
+            }
+            if (hzConsult.getBcjcPayType()==1&&hzConsult.getSupplementPrice()!=null){
+                amount=amount.add(BigDecimal.valueOf(hzConsult.getSupplementPrice()));
+            }
+            String uuid=UUID.randomUUID().toString().replace("-","");
+            String orderId=alipayClient.payMoneyToDoctor(uuid,"2088102176929175",amount.divide(new BigDecimal(100)).toString(),hzConsult.getConsultNo());
+            hzConsult.setTransOrderNo(orderId);
+            hzConsult.setTransOutBizNo(uuid);
+            hzConsult.setId(Integer.valueOf(consid));
+            consultService.updateByConsult(hzConsult);
+        }
         return ResultGenerator.genSuccessResult(i==1?"该状态已改变":"该状态改变失败");
     }
 

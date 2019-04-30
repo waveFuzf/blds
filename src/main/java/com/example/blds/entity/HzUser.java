@@ -53,6 +53,8 @@ public class HzUser {
     @JSONField(serialize=false)
     private Date deleteTime;
 
+    private String alipayAccount;
+
     private String description;
 
     @Transient

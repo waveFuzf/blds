@@ -81,4 +81,6 @@ public interface HzUserMapper extends tkMapper<HzUser> {
             "</script>"
     })
     Integer deleteByUserId(@Param("consultId") Integer userId,@Param("hosid") String hospitalId);
+    @Update("UPDATE hz_user set alipay_account=#{res} where user_id=#{id}")
+    void updateAlipayAccount(@Param("id") Long id,@Param("res") String res);
 }

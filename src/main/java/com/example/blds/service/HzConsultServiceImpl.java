@@ -110,4 +110,14 @@ public class HzConsultServiceImpl implements HzConsultService {
         }
         return qualityInfos;
     }
+
+    @Override
+    public void updatePayStatus(String orderNo, String trade_no, boolean tag) {
+        if (tag){
+            hzConsultMapper.updateBCJCByOrderNo(orderNo,trade_no);
+            return;
+        }
+        hzConsultMapper.updateByOrderNo(orderNo,trade_no);
+
+    }
 }
